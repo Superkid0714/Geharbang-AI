@@ -1,0 +1,356 @@
+[
+    {   
+        "guestHouseId" : 1,
+        "guestHouseName": "메르블루 게스트하우스",
+        "region": "성산_구좌",
+        "location": {
+            "lotNumberAddress": "제주 제주시 구좌읍 하도리 368-4",
+            "roadNameAddress": "제주 제주시 구좌읍 문주란로 121 메르블루게스트하우스",
+            "coordinates": [126.894075, 33.522002]
+        },
+        "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"],
+        "introduction": "메르블루 게스트하우스는 제주 동쪽 구좌읍에 위치한 파티형 게스트하우스로, 365일 매일 게스트하우스 파티를 운영하고 있습니다.\n\n전 객실에서는 토끼섬과 제주 바다를 바라볼 수 있는 오션뷰를 제공하며, 모든 객실에 내부 화장실이 마련되어 있습니다. 신축 시설을 바탕으로 쾌적한 환경을 유지하고 있으며, 매일 침구 세탁과 항균 소독을 진행합니다. 객실 내부를 제외한 공용 공간에는 CCTV가 설치되어 있고 전자 도어락을 운영하여 혼자 방문하는 여행객도 안전하게 이용할 수 있습니다.\n\n제주 동쪽(우도, 성산, 월정리, 세화, 송당오름) 여행에 최적합 코스이며, 제주 동쪽의 주요 관광지와 가까운 거리에 위치해 있어 주변 맛집과 카페, 관광지를 함께 둘러보기 좋습니다.\n\n게스트하우스에서는 매일 파티/불멍을 진행하며, 파티만 따로 참여 가능합니다. 파티 모습은 인스타그램과 블로그를 통해 확인할 수 있습니다.\n\n또한 험머 제주 오프로드부터 수상스포츠(서핑, 스피드보트, 패들보드, 스노클링, 피싱카약 등)를 할인된 가격으로 이용할 수 있도록 안내합니다.\n\n다양한 객실 유형을 운영하고 있으며, 천연 라텍스 매트리스와 높은 층고, 개인 커튼, 개인 콘센트가 마련되어 있습니다. 전 객실 내부 화장실을 갖추고 있어 보다 편안하게 머무를 수 있습니다.",
+        "amenities": ["파티", "투어", "픽업", "주차장", "와이파이", "CCTV", "개별_화장실"],
+        "moods": ["바닷가", "활발한"],
+        "parties": [
+            {
+                "type": "디너_파티",
+                "otherPartyType": null,
+                "startTime": "20:00",
+                "endTime": "24:00",
+                "weeklyDays": ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"],
+                "place": "메르블루 게스트하우스",
+                "moods": ["술", "음식", "불멍"],
+                "isExternalGuestAllowed": false,
+                "guestFee": 0,
+                "externalGuestFee": null,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"],
+                "information": "매일 진행되는 디너파티입니다. 최대 20명만 운영되며, 자세한 파티 시간과 이용 방법은 체크인 당일 안내 문자로 전달됩니다.\n\n메뉴는 매일 새롭게 준비되며, 활어회, 흑돼지 요리, 볶음요리, 과일, 해장라면 등 다양한 음식 중 당일 선정된 메뉴가 제공되며, 제주에서 공수한 신선한 재료를 사용합니다.\n\n불멍은 운영 상황이나 날씨에 따라 진행될 수 있습니다."
+            }
+        ],
+        "rooms": [
+            {
+                "name": "여성 도미토리 (개별커튼/파티필참)",
+                "type": "여성전용",
+                "headCount": 4,
+                "checkInTime": "17:00",
+                "checkOutTime": "11:00",
+                "pricePerNight": 25000,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"]
+            },
+            {
+                "name": "여성 도미토리 (개별커튼/파티필참)",
+                "type": "여성전용",
+                "headCount": 6,
+                "checkInTime": "17:00",
+                "checkOutTime": "11:00",
+                "pricePerNight": 25000,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"]
+            },
+            {
+                "name": "남성 도미토리 (개별커튼/파티필참)",
+                "type": "남성전용",
+                "headCount": 8,
+                "checkInTime": "17:00",
+                "checkOutTime": "11:00",
+                "pricePerNight": 25000,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"]                
+            },
+            {
+                "name": "남성 도미토리 (개별커튼/파티필참)",
+                "type": "남성전용",
+                "headCount": 6,
+                "checkInTime": "17:00",
+                "checkOutTime": "11:00",
+                "pricePerNight": 25000,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"]                
+            }
+        ],
+        "contact": {
+            "phoneNumber": "0507-1304-6291",
+            "instagramId": "choi94206291",
+            "webSite": "https://blog.naver.com/merblueu",
+            "reservationUrl": "https://map.naver.com/p/entry/place/1174651592?placePath=%2Fhome%3Fentry%3Dplt%26fromPanelNum%3D1%26additionalHeight%3D76%26timestamp%3D202607122049%26locale%3Dko%26svcName%3Dmap_pcv5%26businessCategory%3Dguesthouse%26from%3Dmap%26fromPanelNum%3D1%26additionalHeight%3D76%26timestamp%3D202607122114%26locale%3Dko%26svcName%3Dmap_pcv5&searchType=place&lng=126.8940622&lat=33.5219702&c=15.00,0,0,0,dh"
+        },
+        "ownerMessage": "새로운 사람들과 즐길 준비가 되셨나요?\n\n365일 매일 파티가 열리는 메르블루에서 즐거운 추억을 쌓고 가세요."
+    },
+
+    {   
+        "guestHouseId" : 2,
+        "guestHouseName": "동행in협재 게스트하우스",
+        "region": "애월",
+        "location": {
+            "lotNumberAddress": "제주 제주시 한림읍 협재리 1689-1",
+            "roadNameAddress": "제주 제주시 한림읍 협재1길 27 1층 동행in협재",
+            "coordinates": [126.243159, 33.397702]
+        },
+        "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"],
+        "introduction": "동행in협재 게스트하우스는 제주시 한림읍 협재의 조용한 골목에 위치한 게스트하우스로, 혼자 온 여행자도 새로운 사람들과 자연스럽게 어울리며 제주의 감성을 편안하게 느낄 수 있는 공간입니다.\n\n제주나무로 만든 캡슐침대와 암막커튼을 설치해 아늑한 휴식을 제공하며, 각 침대에는 조광기와 개인 콘센트가 마련되어 있습니다. 전 객실에는 개별 화장실이 있고, 요청 시 이어플러그도 제공됩니다.\n\n남녀 객실을 분리해 운영하며, 객실을 제외한 공용 공간에는 CCTV가 24시간 작동합니다. 숙소 앞 공영주차장과 협재 해녀의 집 주차장, 협재포구 주차장 등 주변 주차장을 이용할 수 있습니다.",
+        "amenities": ["파티", "주차장", "와이파이", "CCTV", "개별_화장실", "이어플러그"],
+        "moods": ["조용한", "소규모파티"],
+        "parties": [
+            {
+                "type": "기타",
+                "otherPartyType": "티타임",
+                "startTime": "12:00",
+                "endTime": "14:00",
+                "weeklyDays": ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"],
+                "place": "동행in협재 게스트하우스 공용거실",
+                "moods": ["차", "대화"],
+                "isExternalGuestAllowed": false,
+                "guestFee": 0,
+                "externalGuestFee": null,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"],
+                "information": "매일 낮 12시에 공용거실에서 진행되는 티타임입니다. 차를 마시며 맛집과 카페 정보를 공유하고 여행자들과 여유롭게 대화를 나눌 수 있습니다."
+            },
+            {
+                "type": "디너_파티",
+                "otherPartyType": null,
+                "startTime": "20:00",
+                "endTime": "24:00",
+                "weeklyDays": ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"],
+                "place": "동행in협재 게스트하우스",
+                "moods": ["술", "음식", "대화"],
+                "isExternalGuestAllowed": true,
+                "guestFee": 0,
+                "externalGuestFee": null,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"],
+                "information": "매일 오후 8시에 진행되는 약 15명 내외의 소규모 디너파티입니다. 호스트가 제주 제철 식재료로 매일 다른 음식을 준비하며, 여행자들이 술과 음식을 함께 즐기면서 따뜻한 대화를 나눌 수 있습니다. 외부인은 인스타그램 DM 문의 후 참여 가능하며, 날씨가 좋을 때는 불멍도 진행합니다."
+            }
+        ],
+        "rooms": [
+            {
+                "name": "여성 도미토리 (객실 내 화장실)",
+                "type": "여성전용",
+                "headCount": 4,
+                "checkInTime": "17:00",
+                "checkOutTime": "12:00",
+                "pricePerNight": 25000,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"]
+            },
+            {
+                "name": "여성 도미토리 (객실 내 화장실)",
+                "type": "여성전용",
+                "headCount": 2,
+                "checkInTime": "17:00",
+                "checkOutTime": "12:00",
+                "pricePerNight": 35000,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"]                
+            },
+            {
+                "name": "남성 도미토리 (객실 내 화장실)",
+                "type": "남성전용",
+                "headCount": 4,
+                "checkInTime": "17:00",
+                "checkOutTime": "12:00",
+                "pricePerNight": 25000,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"]
+            },
+            {
+                "name": "남성 도미토리 (객실 내 화장실)",
+                "type": "남성전용",
+                "headCount": 2,
+                "checkInTime": "17:00",
+                "checkOutTime": "12:00",
+                "pricePerNight": 35000,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"]                
+            }
+
+        ],
+        "contact": {
+            "phoneNumber": "0507-1393-3556",
+            "instagramId": "donghaeng_in_hyeopjae",
+            "webSite": null,
+            "reservationUrl": "https://map.naver.com/p/entry/place/1888386072?placePath=%2Froom%3FfromPanelNum%3D1%26additionalHeight%3D76%26timestamp%3D202607131517%26locale%3Dko%26svcName%3Dmap_pcv5%26businessCategory%3Dguesthouse&c=15.00,0,0,0,dh"
+        },
+        "ownerMessage": "낭만과 청춘, 사랑과 젊음을 함께 나누는 곳. 동행에서 편안한 쉼과 따뜻한 인연을 만나보세요."
+    },
+
+    {   
+        "guestHouseId" : 3,
+        "guestHouseName": "제주게토 게스트하우스파티",
+        "region": "서귀포시",
+        "location": {
+            "lotNumberAddress": "제주 서귀포시 남원읍 의귀리 1270-3",
+            "roadNameAddress": "제주 서귀포시 남원읍 서의로154번길 69 제주게토게스트하우스파티",
+            "coordinates": [126.713244, 33.299591]
+        },
+        "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"],
+        "introduction": "제주게토 게스트하우스는 매일 많은 여행객이 함께하는 대규모 파티형 게스트하우스입니다. 혼자 방문하는 여행객도 자연스럽게 어울릴 수 있도록 매니저와 스태프가 분위기를 이끌며, 지나치게 시끄럽기보다 적당한 텐션 속에서 새로운 사람들과 친해질 수 있도록 운영합니다.\n\n숙소는 4인실과 6인실 도미토리로 구성되어 있으며, 리모델링된 객실마다 화장실과 샤워실이 마련되어 있습니다. 객실과 파티장이 분리되어 있어 파티 소음에 대한 부담을 줄였고, 라운지펍, 수영장, 잔디 루프탑, 야외 스크린, 농구장 등 다양한 공용시설을 갖추고 있습니다.\n\n남원환승정류장과 의귀환승정류장에서 셔틀을 운영하며, 체크인 전 짐 보관이 가능합니다. 무료 주차 공간과 무료 발렛 서비스도 제공합니다. CCTV와 보안 출동 서비스, 화재감지기 등을 갖추어 안전하게 이용할 수 있도록 관리하고 있습니다.\n\n객실 내에서의 흡연과 음식물 및 주류 반입/섭취가 제한되며, 외국인 예약과 40대 이상 신규 예약은 불가능합니다.",
+        "amenities": ["파티", "픽업", "주차장", "무료발렛", "와이파이", "수영장", "바비큐장", "CCTV", "개별_화장실"],
+        "moods": ["대규모파티", "활발한"],
+        "parties": [
+            {
+                "type": "디너_파티",
+                "otherPartyType": null,
+                "startTime": "20:00",
+                "endTime": "24:00",
+                "weeklyDays": ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"],
+                "place": "제주게토 파티장",
+                "moods": ["술", "음식", "게임"],
+                "isExternalGuestAllowed": true,
+                "guestFee": 32000,
+                "externalGuestFee": 35000,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"],
+                "information": "매일 디너파티와 애프터파티가 이어서 진행됩니다. 디너파티에서는 철판삼겹살, 토마토 해장파스타, 불닭갈비, 제육볶음, 계란말이 등 다양한 음식과 주류가 제공되며, 애프터파티에서는 치킨가라아게, 감자튀김, 나초 등 간단한 안주와 함께 가벼운 이벤트 게임을 즐길 수 있습니다. 파티 후에는 루프탑과 야외 공간도 이용할 수 있으며, 숙박 없이 파티만 참여하는 것도 가능합니다. 숙박객 할인과 이벤트가 수시로 진행되므로 정확한 이용 금액은 객실 가격 정보에서 확인해 주세요."
+            }
+        ],
+        "rooms": [
+            {
+                "name": "여성 도미토리 (파티필참)",
+                "type": "여성전용",
+                "headCount": 6,
+                "checkInTime": "17:00",
+                "checkOutTime": "11:00",
+                "pricePerNight": 12000,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"]
+            },
+            {
+                "name": "여성 도미토리",
+                "type": "여성전용",
+                "headCount": 6,
+                "checkInTime": "17:00",
+                "checkOutTime": "11:00",
+                "pricePerNight": 25000,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"]                
+            },
+            {
+                "name": "여성 파티션 (파티필참)",
+                "type": "여성전용",
+                "headCount": 4,
+                "checkInTime": "17:00",
+                "checkOutTime": "11:00",
+                "pricePerNight": 21900,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"]                
+            },
+            {
+                "name": "여성 파티션 (단독사용/파티필참)",
+                "type": "여성전용",
+                "headCount": 4,
+                "checkInTime": "17:00",
+                "checkOutTime": "11:00",
+                "pricePerNight": 65700,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"]                
+            },
+            {
+                "name": "여성 파티션",
+                "type": "여성전용",
+                "headCount": 4,
+                "checkInTime": "17:00",
+                "checkOutTime": "11:00",
+                "pricePerNight": 30000,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"]                
+            },
+            {
+                "name": "남성 도미토리 (파티필참)",
+                "type": "남성전용",
+                "headCount": 6,
+                "checkInTime": "17:00",
+                "checkOutTime": "11:00",
+                "pricePerNight": 21900,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"]                
+            },
+            {
+                "name": "남성 도미토리",
+                "type": "남성전용",
+                "headCount": 6,
+                "checkInTime": "17:00",
+                "checkOutTime": "11:00",
+                "pricePerNight": 25000,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"]                
+            },
+            {
+                "name": "남성 파티션 (파티필참)",
+                "type": "남성전용",
+                "headCount": 4,
+                "checkInTime": "17:00",
+                "checkOutTime": "11:00",
+                "pricePerNight": 27000,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"]                
+            },
+            {
+                "name": "남성 파티션 (단독사용/파티필참)",
+                "type": "남성전용",
+                "headCount": 4,
+                "checkInTime": "17:00",
+                "checkOutTime": "11:00",
+                "pricePerNight": 81000,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"]                
+            },
+            {
+                "name": "남성 파티션",
+                "type": "남성전용",
+                "headCount": 4,
+                "checkInTime": "17:00",
+                "checkOutTime": "11:00",
+                "pricePerNight": 30000,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"]                
+            }
+        ],
+        "contact": {
+            "phoneNumber": "0507-1331-6990",
+            "instagramId": "jejughetto",
+            "webSite": "https://blog.naver.com/lecomom",
+            "reservationUrl": "https://m.place.naver.com/accommodation/1041519998/room?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQPOTM2NjE5NzQzMzkyNDU5AAGnqPRrEgMaKP5gGp1I5RWwy46CJiSqAu1U_0i3CNf_UVbtDuJl9UU6j5Li00o_aem_mzNkeie0awnJPktzZMUGmg&businessCategory=guesthouse"
+        },
+        "ownerMessage": "혼자 오셔도 걱정하지 마세요. 제주게토에서 새로운 사람들과 즐거운 추억을 만들어보세요.\n\n파티 참여 가격과 할인 이벤트는 수시로 변경될 수 있으니 예약 전 객실 및 파티 가격을 꼭 확인해 주세요."
+    },
+
+    {   
+        "guestHouseId" : 4,
+        "guestHouseName": "소담소담 게스트하우스",
+        "region": "제주시",
+        "location": {
+            "lotNumberAddress": "제주 제주시 용담이동 464-12",
+            "roadNameAddress": "제주 제주시 흥운길 63-4 소담소담 게스트하우스",
+            "coordinates": [126.513246, 33.514484]
+        },
+        "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"],
+        "introduction": "소담소담 게스트하우스는 제주공항에서 차량으로 약 7분 거리에 위치한 오션뷰 체험형 게스트하우스입니다. 따뜻하고 편안한 공간에서 휴식하며, 당일 운영 상황에 따라 다양한 체험 프로그램에 참여할 수 있습니다.\n\n모든 객실은 10인실로 운영되며 여성 전용 객실과 남성 전용 객실이 분리되어 있습니다. 출입문에는 CCTV가 설치되어 있고 사장님과 스태프가 상주하여 이용 중 불편한 점이 있을 경우 언제든 도움을 받을 수 있습니다. 드라이기, 수건, 샴푸, 바디워시가 제공되며 개인 위생용품은 별도로 준비해야 합니다.\n\n매일 저녁에는 각자 준비한 음식을 함께 나누며 이야기하는 소규모 포틀럭 파티가 진행됩니다. 대형 파티보다는 여행자들이 편안하게 대화를 나누고 좋은 인연을 만들 수 있는 분위기를 지향합니다.\n\n체크인은 비대면으로 진행되며 당일 발송되는 안내 문자를 확인해야 합니다. 체크인 전과 체크아웃 후에는 1층 홀에 짐을 보관할 수 있고, 취식 역시 1층 홀에서만 가능합니다. 파티가 자정까지 진행되어 다소 소란스러울 수 있으므로 소음에 민감한 이용객은 예약 전 확인이 필요합니다.",
+        "amenities": ["파티", "주차장", "와이파이",  "바비큐장", "체험활동", "조식제공", "CCTV", "짐보관"],
+        "moods": ["소규모파티", "동물"],
+        "parties": [
+            {
+            "type": "포틀럭",
+            "otherPartyType": null,
+            "startTime": "19:30",
+            "endTime": "24:00",
+            "weeklyDays": ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"],
+            "place": "소담소담 게스트하우스 1층 홀",
+            "moods": ["대화", "친목"],
+            "isExternalGuestAllowed": false,
+            "guestFee": 5000,
+            "externalGuestFee": null,
+            "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"],
+            "information": "각자 나누어 먹을 음식을 준비해 함께 이야기하는 소규모 포틀럭 파티입니다. 참가비 5,000원을 입금한 뒤 음식을 준비해 오후 7시 30분까지 1층 홀로 내려오면 참여할 수 있습니다. 참가비는 냉난방비와 식기 관리 등의 운영비로 사용되며 일부는 정기적으로 유기견·유기묘 보호소에 기부됩니다."
+            }
+        ],
+        "rooms": [
+            {
+                "name": "남자 도미",
+                "type": "남성전용",
+                "headCount": 10,
+                "checkInTime": "16:00",
+                "checkOutTime": "11:00",
+                "pricePerNight": 21000,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"]
+            },
+            {
+                "name": "여자 도미",
+                "type": "여성전용",
+                "headCount": 10,
+                "checkInTime": "16:00",
+                "checkOutTime": "11:00",
+                "pricePerNight": 21000,
+                "imageUrls": ["https://velog.velcdn.com/images/turtlestory/post/d72eb799-2bab-40a9-b18d-0dd7d8f9b5ca/image.png"]
+            }
+        ],
+        "contact": {
+            "phoneNumber": "064-743-3350",
+            "instagramId": "sodam._.sodam",
+            "webSite": "https://link.inpock.co.kr/sodam_sodam?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQPOTM2NjE5NzQzMzkyNDU5AAGnLzL_VtCNfY11dwqICxxaRWE6cjEr9Bl2KyIHNjbV0WDsD9ZjWQbOqoHO1vs_aem_i25DLsC4Vc1rsuxmpjlyzg",
+            "reservationUrl": "https://map.naver.com/p/entry/place/1572120385?placePath=%2Froom%3FfromPanelNum%3D1%26additionalHeight%3D76%26timestamp%3D202607172318%26locale%3Dko%26svcName%3Dmap_pcv5%26businessCategory%3Dguesthouse&c=15.00,0,0,0,dh"
+        },
+        "ownerMessage": "소담소담은 대형 파티 게스트하우스가 아닙니다. 좋은 사람들과 편안하게 이야기하며 따뜻한 인연과 추억을 만들어가시길 바랍니다."
+    }
+]
