@@ -1,9 +1,4 @@
-.venv/
-.pyjit/
-.jdk17/
+.env
 __pycache__/
 *.pyc
-.DS_Store
-
-review_ai/
-*.xlsx
+storage/vector_db/
