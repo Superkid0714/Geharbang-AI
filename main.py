@@ -1,4 +1,4 @@
-from src.guesthouses.recommender import recommend_guesthouse
+from src.guesthouses.recommender import answer_guesthouse_chat
 from src.guesthouses.vector_store import has_vector_store_documents
 
 
@@ -12,6 +12,7 @@ def main() -> None:
         return
 
     print("게스트하우스 추천 챗봇을 시작합니다. 종료하려면 exit를 입력하세요.")
+    last_result: dict | None = None
 
     while True:
         query = input("질문: ").strip()
@@ -25,7 +26,7 @@ def main() -> None:
             continue
 
         try:
-            answer = recommend_guesthouse(query)
+            answer, last_result = answer_guesthouse_chat(query, previous_result=last_result)
         except (ValueError, RuntimeError, ImportError) as error:
             print(error)
             continue
