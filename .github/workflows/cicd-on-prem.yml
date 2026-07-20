@@ -22,6 +22,7 @@ jobs:
         run: python -m unittest discover -s tests
 
   deploy:
+    if: github.repository == 'JNU-econovation/Geharbang-AI'
     runs-on: self-hosted
     needs: test
     env:
