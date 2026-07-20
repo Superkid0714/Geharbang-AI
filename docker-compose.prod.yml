@@ -1,0 +1,40 @@
+services:
+  rag-ai:
+    build: .
+    image: geharbang-rag-ai:latest
+    container_name: geharbang-rag-ai
+    restart: unless-stopped
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY:?GEMINI_API_KEY is required}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.1-flash-lite}
+      AI_DATA_KEY: ${AI_DATA_KEY:?AI_DATA_KEY is required}
+      BACKEND_BASE_URL: http://server-dev:8080
+      AI_CORS_ORIGINS: https://geharbang.org
+      HF_HOME: /home/appuser/.cache/huggingface
+    ports:
+      - "127.0.0.1:8001:8001"
+    volumes:
+      - rag-vector-db:/app/storage/vector_db
+      - rag-huggingface-cache:/home/appuser/.cache/huggingface
+    networks:
+      - guesthouse
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/ready', timeout=3).read()",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  rag-vector-db:
+  rag-huggingface-cache:
+
+networks:
+  guesthouse:
+    external: true
