@@ -1,0 +1,1 @@
+"""Staff recruitment RAG domain."""

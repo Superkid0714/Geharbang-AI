@@ -2,8 +2,83 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 from pathlib import Path
 from typing import Any
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+
+
+DEFAULT_BACKEND_BASE_URL = "http://localhost:8080"
+
+
+def load_guesthouses_from_backend(
+    backend_base_url: str | None = None,
+    ai_data_key: str | None = None,
+    timeout: float = 20.0,
+) -> list[dict]:
+    """Load active guesthouses from the backend's protected AI endpoint."""
+    base_url = (backend_base_url or os.getenv("BACKEND_BASE_URL", DEFAULT_BACKEND_BASE_URL)).rstrip("/")
+    data_key = ai_data_key or os.getenv("AI_DATA_KEY")
+    if not data_key:
+        raise ValueError("AI_DATA_KEY가 설정되어 있지 않습니다.")
+    request = Request(
+        f"{base_url}/api/v1/guest-houses/internal/ai-data",
+        headers={"Accept": "application/json", "X-AI-Data-Key": data_key},
+    )
+    try:
+        with urlopen(request, timeout=timeout) as response:
+            payload = json.load(response)
+    except HTTPError as error:
+        raise RuntimeError(f"게스트하우스 API가 HTTP {error.code}를 반환했습니다.") from error
+    except (URLError, TimeoutError, OSError) as error:
+        raise RuntimeError(f"백엔드 게스트하우스 API에 연결할 수 없습니다: {error}") from error
+    except json.JSONDecodeError as error:
+        raise ValueError("게스트하우스 API 응답이 올바른 JSON이 아닙니다.") from error
+
+    if not isinstance(payload, dict) or not isinstance(payload.get("guestHouses"), list):
+        raise ValueError("guestHouses must be a list")
+    guesthouses: list[dict] = []
+    for index, item in enumerate(payload["guestHouses"]):
+        if not isinstance(item, dict) or not isinstance(item.get("id"), int) or not isinstance(item.get("details"), dict):
+            raise ValueError(f"guestHouses[{index}] has an invalid shape")
+        guesthouse = copy.deepcopy(item["details"])
+        guesthouse["guestHouseId"] = item["id"]
+        _validate_guesthouse(guesthouse, index)
+        guesthouses.append(guesthouse)
+    return guesthouses
+
+
+def load_guesthouse_from_backend(
+    guesthouse_id: int,
+    backend_base_url: str | None = None,
+    ai_data_key: str | None = None,
+    timeout: float = 20.0,
+) -> dict:
+    """Load one active guesthouse for incremental index synchronization."""
+    if guesthouse_id <= 0:
+        raise ValueError("guesthouse_id must be positive")
+    base_url = (backend_base_url or os.getenv("BACKEND_BASE_URL", DEFAULT_BACKEND_BASE_URL)).rstrip("/")
+    data_key = ai_data_key or os.getenv("AI_DATA_KEY")
+    if not data_key:
+        raise ValueError("AI_DATA_KEY가 설정되어 있지 않습니다.")
+    request = Request(
+        f"{base_url}/api/v1/guest-houses/internal/ai-data/{guesthouse_id}",
+        headers={"Accept": "application/json", "X-AI-Data-Key": data_key},
+    )
+    try:
+        with urlopen(request, timeout=timeout) as response:
+            item = json.load(response)
+    except HTTPError as error:
+        raise RuntimeError(f"게스트하우스 API가 HTTP {error.code}를 반환했습니다.") from error
+    except (URLError, TimeoutError, OSError) as error:
+        raise RuntimeError(f"백엔드 게스트하우스 API에 연결할 수 없습니다: {error}") from error
+    if not isinstance(item, dict) or item.get("id") != guesthouse_id or not isinstance(item.get("details"), dict):
+        raise ValueError("게스트하우스 상세 API 응답 형식이 올바르지 않습니다.")
+    guesthouse = copy.deepcopy(item["details"])
+    guesthouse["guestHouseId"] = item["id"]
+    _validate_guesthouse(guesthouse, 0)
+    return guesthouse
 
 
 def load_guesthouses(file_path: str = "data/guesthouses.json") -> list[dict]:

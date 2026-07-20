@@ -40,6 +40,33 @@ def build_vector_store(
     )
 
 
+def upsert_guesthouse_document(
+    document: dict,
+    persist_directory: str = DEFAULT_PERSIST_DIRECTORY,
+) -> None:
+    """Insert or replace one guesthouse document without rebuilding the collection."""
+    _validate_documents([document])
+    collection = _get_collection(persist_directory, reset=False)
+    collection.upsert(
+        ids=[f"guesthouse-{document['guestHouseId']}"],
+        documents=[document["content"]],
+        embeddings=_embed_texts([document["content"]]),
+        metadatas=[{
+            "guestHouseId": document["guestHouseId"],
+            "guestHouseName": document["guestHouseName"],
+        }],
+    )
+
+
+def delete_guesthouse_document(
+    guesthouse_id: int,
+    persist_directory: str = DEFAULT_PERSIST_DIRECTORY,
+) -> None:
+    if guesthouse_id <= 0:
+        raise ValueError("guesthouse_id must be positive")
+    _get_collection(persist_directory, reset=False).delete(ids=[f"guesthouse-{guesthouse_id}"])
+
+
 def search_guesthouses(
     query: str,
     top_k: int = 3,
