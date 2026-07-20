@@ -84,6 +84,27 @@ AI 저장소의 GitHub Actions secrets에도 `GEMINI_API_KEY`와 `AI_DATA_KEY`�
 인덱스를 구축합니다. BGE-M3 모델을 한 프로세스에서 공유하므로 Uvicorn worker는
 1개로 고정합니다.
 
+### 공개 채팅 요청 제한
+
+Gemini 비용 악용을 막기 위해 운영 Nginx의 `http` 블록에 IP별 요청 영역과
+초과 상태 코드를 설정합니다.
+
+```nginx
+limit_req_zone $binary_remote_addr zone=ai_chat_per_ip:10m rate=12r/m;
+limit_req_status 429;
+```
+
+`geharbang.org`의 `server` 블록에서는 AI 채팅 경로에만 순간 6회까지 허용합니다.
+
+```nginx
+location = /api/v1/ai/chat {
+    limit_req zone=ai_chat_per_ip burst=6 nodelay;
+    proxy_pass http://api;
+    proxy_connect_timeout 5s;
+    proxy_read_timeout 100s;
+}
+```
+
 운영 서버에서 수동으로 확인하려면 다음 명령을 사용합니다.
 
 ```bash
