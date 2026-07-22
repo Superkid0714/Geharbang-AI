@@ -33,5 +33,36 @@ def extract_staff_conditions(query: str) -> dict[str, str]:
         conditions["gender"] = "여"
     elif any(word in normalized for word in ["남성만", "남자만", "남성 스텝", "남자 스텝"]):
         conditions["gender"] = "남"
+    elif any(word in normalized for word in ["성별 무관", "남녀 무관", "성별 상관없이"]):
+        conditions["gender"] = "무관"
 
     return conditions
+
+
+def filter_staff_recruitments(items: list[dict], conditions: dict[str, str]) -> list[dict]:
+    """Filter the latest backend records before semantic ranking."""
+    filtered: list[dict] = []
+    for item in items:
+        details = item.get("details") or {}
+        working = details.get("workingInformation") or {}
+        feature = details.get("feature") or {}
+        if conditions.get("region") and _normalize_region(details.get("region")) != _normalize_region(conditions["region"]):
+            continue
+        if conditions.get("workingPeriod") and working.get("workingPeriod") != conditions["workingPeriod"]:
+            continue
+        if conditions.get("gender") and feature.get("gender") != conditions["gender"]:
+            continue
+        filtered.append(item)
+    return filtered
+
+
+def _normalize_region(value: object) -> str:
+    normalized = str(value or "").strip().replace("·", "_")
+    aliases = {
+        "애월": "애월_협재",
+        "협재": "애월_협재",
+        "성산": "성산_구좌",
+        "구좌": "성산_구좌",
+        "우도": "우도_기타",
+    }
+    return aliases.get(normalized, normalized)

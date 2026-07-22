@@ -3,6 +3,9 @@ from __future__ import annotations
 import json
 import os
 
+from src.guesthouses.data_loader import load_guesthouse_from_backend, load_guesthouses_from_backend
+from src.guesthouses.document_builder import build_guesthouse_document, build_guesthouse_documents
+from src.guesthouses.structured_filter import extract_structured_conditions, filter_guesthouses
 from src.guesthouses.vector_store import search_guesthouses
 
 
@@ -57,14 +60,46 @@ def answer_guesthouse_chat(
                 "어떤 게스트하우스에 대한 질문인지 먼저 알려주세요. 예를 들면 \"메르블루 게하 어때?\"처럼 숙소 이름을 포함해서 물어볼 수 있습니다.",
                 previous_result,
             )
-        prompt = _build_detail_prompt(query=query, result=previous_result)
-        return _generate_gemini_answer(prompt), previous_result
+        fresh_result = _load_fresh_guesthouse_result(previous_result)
+        prompt = _build_detail_prompt(query=query, result=fresh_result)
+        return _generate_gemini_answer(prompt), fresh_result
 
-    results = search_guesthouses(query, top_k=1, persist_directory=persist_directory)
+    current_guesthouses = load_guesthouses_from_backend()
+    conditions = extract_structured_conditions(query)
+    filtered_guesthouses = filter_guesthouses(current_guesthouses, conditions)
+    if not filtered_guesthouses:
+        return _guesthouse_no_result_message(conditions), previous_result
+
+    candidate_ids = [int(item["guestHouseId"]) for item in filtered_guesthouses]
+    results = search_guesthouses(
+        query,
+        top_k=min(5, len(candidate_ids)),
+        persist_directory=persist_directory,
+        candidate_ids=candidate_ids,
+    )
     if not results:
-        return "조건에 맞는 게스트하우스를 찾지 못했습니다.", previous_result
+        # A just-created DB record can be briefly absent from Chroma. It is still
+        # safer to answer from the current DB record than from a stale index row.
+        result = build_guesthouse_document(filtered_guesthouses[0])
+    else:
+        current_documents = {
+            int(document["guestHouseId"]): document
+            for document in build_guesthouse_documents(filtered_guesthouses)
+        }
+        fresh_results = []
+        for indexed_result in results:
+            guesthouse_id = indexed_result.get("guestHouseId")
+            if isinstance(guesthouse_id, int) and guesthouse_id in current_documents:
+                fresh_results.append({
+                    **current_documents[guesthouse_id],
+                    "distance": indexed_result.get("distance"),
+                })
+        result = (
+            _select_best_guesthouse(query, fresh_results, rank_by_reviews=intent == "recommendation")
+            if fresh_results
+            else build_guesthouse_document(filtered_guesthouses[0])
+        )
 
-    result = results[0]
     if intent == "detail_question":
         prompt = _build_detail_prompt(query=query, result=result)
     else:
@@ -245,8 +280,6 @@ def _looks_like_guesthouse_detail_question(query: str) -> bool:
         "체크아웃",
         "편의시설",
     ]
-    known_name_fragments = ["메르블루", "동행", "협재", "제주게토"]
-
     has_guesthouse_marker = any(marker in query for marker in guesthouse_markers)
     has_detail_marker = any(marker in query for marker in detail_markers)
     return has_guesthouse_marker and has_detail_marker
@@ -275,7 +308,7 @@ def _looks_like_named_guesthouse_detail_question(query: str) -> bool:
         "편의시설",
         "추천 이유",
     ]
-    known_name_fragments = ["메르블루", "동행", "협재", "제주게토"]
+    known_name_fragments = ["메르블루", "동행in협재", "제주게토"]
 
     has_known_name = any(fragment in query for fragment in known_name_fragments)
     has_detail_marker = any(marker in query for marker in detail_markers)
@@ -347,6 +380,47 @@ def _build_recommendation_prompt(query: str, result: dict) -> str:
 정보:
 {content}
 """
+
+
+def _load_fresh_guesthouse_result(previous_result: dict) -> dict:
+    guesthouse_id = previous_result.get("guestHouseId")
+    if not isinstance(guesthouse_id, int):
+        return previous_result
+    return build_guesthouse_document(load_guesthouse_from_backend(guesthouse_id))
+
+
+def _select_best_guesthouse(query: str, results: list[dict], rank_by_reviews: bool = True) -> dict:
+    if not results:
+        raise ValueError("fresh guesthouse results must not be empty")
+    normalized = _normalize_query(query)
+    if rank_by_reviews and any(keyword in normalized for keyword in ["리뷰 많은", "후기 많은"]):
+        return max(results, key=lambda item: (item.get("reviewCount", 0), -(item.get("distance") or 0)))
+    if rank_by_reviews and any(keyword in normalized for keyword in ["평점", "리뷰 좋은", "후기 좋은"]):
+        return max(
+            results,
+            key=lambda item: (
+                item.get("averageRating", 0),
+                item.get("reviewCount", 0),
+                -(item.get("distance") or 0),
+            ),
+        )
+    return results[0]
+
+
+def _guesthouse_no_result_message(conditions: dict) -> str:
+    labels: list[str] = []
+    if conditions.get("region"):
+        labels.append(str(conditions["region"]).replace("_", "·"))
+    labels.extend(str(value).replace("_", " ") for value in conditions.get("moods", []))
+    labels.extend(str(value) for value in conditions.get("amenities", []))
+    if conditions.get("maxPricePerNight") is not None:
+        labels.append(f"1박 {conditions['maxPricePerNight']:,}원 이하")
+    if conditions.get("minAverageRating") is not None:
+        labels.append(f"평점 {conditions['minAverageRating']}점 이상")
+    condition_text = ", ".join(labels)
+    if condition_text:
+        return f"현재 DB에서 {condition_text} 조건을 모두 만족하는 활성 게스트하우스를 찾지 못했습니다. 조건을 조금 넓혀 다시 질문해 주세요."
+    return "현재 DB에서 조건에 맞는 활성 게스트하우스를 찾지 못했습니다."
 
 
 def _build_detail_prompt(query: str, result: dict) -> str:

@@ -1,8 +1,10 @@
 import unittest
+from unittest.mock import patch
 
 from src.staff_steps.data_loader import validate_staff_recruitments_payload
 from src.staff_steps.document_builder import build_staff_recruitment_document
-from src.staff_steps.structured_filter import extract_staff_conditions
+from src.staff_steps.recommender import answer_staff_chat
+from src.staff_steps.structured_filter import extract_staff_conditions, filter_staff_recruitments
 
 
 SAMPLE = {
@@ -52,6 +54,40 @@ class StaffStepDataTest(unittest.TestCase):
             extract_staff_conditions("애월에서 한 달 일할 여성 스텝 공고"),
             {"region": "애월_협재", "workingPeriod": "중기", "gender": "여"},
         )
+        self.assertEqual(
+            extract_staff_conditions("제주시 단기 성별 무관 스텝"),
+            {"region": "제주시", "workingPeriod": "단기", "gender": "무관"},
+        )
+
+    def test_filters_latest_backend_records(self) -> None:
+        items = validate_staff_recruitments_payload(SAMPLE)
+        self.assertEqual(
+            filter_staff_recruitments(items, {"region": "애월", "workingPeriod": "한달"}),
+            items,
+        )
+        self.assertEqual(filter_staff_recruitments(items, {"region": "제주시"}), [])
+
+    @patch("src.staff_steps.recommender._generate_gemini_answer", side_effect=lambda prompt: prompt)
+    @patch("src.staff_steps.recommender.search_staff_recruitments")
+    @patch("src.staff_steps.recommender.load_staff_recruitments")
+    def test_replaces_stale_staff_address_with_current_backend_data(
+        self, load_current, search, _generate
+    ) -> None:
+        current = validate_staff_recruitments_payload(SAMPLE)
+        load_current.return_value = current
+        search.return_value = [{
+            "staffRecruitmentId": 12,
+            "title": "예전 공고",
+            "guestHouseName": "예전 게하",
+            "content": "주소: 예전 주소",
+            "distance": 0.2,
+        }]
+
+        answer, result = answer_staff_chat("애월 스텝 공고 추천해줘")
+
+        self.assertIn("주소: 제주시 애월읍", answer)
+        self.assertNotIn("예전 주소", answer)
+        self.assertEqual(result["title"], "애월 한 달 스텝 모집")
 
 
 if __name__ == "__main__":

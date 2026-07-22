@@ -1,17 +1,21 @@
 from __future__ import annotations
 
 import copy
+import logging
 import re
 from typing import Any
 
 
+logger = logging.getLogger(__name__)
+
+
 REGION_KEYWORDS = {
-    "제주시": ["제주시", "제주 시내", "제주공항", "제주공항 근처", "공항 근처", "시내"],
     "애월": ["애월", "협재", "한림", "금능", "곽지", "서쪽", "제주 서쪽"],
-    "서귀포시": ["서귀포", "서귀포시", "남원", "표선"],
-    "중문": ["중문", "대정", "중문관광단지", "중문 관광단지"],
     "성산_구좌": ["성산", "구좌", "구좌읍", "월정리", "세화", "하도", "종달", "송당", "동쪽", "제주 동쪽"],
     "우도_기타": ["우도", "도서지역", "추자", "비양도", "기타"],
+    "중문": ["중문", "대정", "중문관광단지", "중문 관광단지"],
+    "서귀포시": ["서귀포", "서귀포시", "남원", "표선"],
+    "제주시": ["제주시", "제주 시내", "제주공항", "제주공항 근처", "공항 근처", "시내"],
 }
 
 ADDRESS_REGION_KEYWORDS = {
@@ -47,6 +51,28 @@ EXTERNAL_GUEST_KEYWORDS = [
     "숙박 없이 파티",
 ]
 
+MOOD_KEYWORDS = {
+    "바닷가": ["바닷가", "바다 근처", "해변 근처", "오션뷰"],
+    "동물": ["동물", "강아지", "고양이", "반려동물"],
+    "자연_숲": ["자연", "숲", "초록", "힐링"],
+    "대규모파티": ["대규모 파티", "큰 파티", "대형 파티"],
+    "소규모파티": ["소규모 파티", "작은 파티", "소수 파티"],
+    "조용한": ["조용", "차분한", "한적한"],
+    "활발한": ["활발한", "활기찬", "사교적인"],
+    "감성_느좋": ["감성", "느좋", "분위기 좋은"],
+    "파티_X": ["파티 없는", "파티 안 하는", "파티x", "파티 x"],
+    "솔로": ["혼자 여행", "혼행", "솔로"],
+    "한달살이": ["한달살이", "한 달 살기", "장기 숙박"],
+}
+
+AMENITY_KEYWORDS = {
+    "수영장": ["수영장", "풀장"],
+    "주차": ["주차"],
+    "조식": ["조식", "아침 제공"],
+    "무료 Wi-Fi": ["무료 와이파이", "무료 wi-fi", "무료 wifi", "와이파이"],
+    "바비큐": ["바비큐", "바베큐"],
+}
+
 
 def extract_structured_conditions(query: str) -> dict[str, Any]:
     """사용자 질문에서 명확한 정형 조건만 추출합니다."""
@@ -57,6 +83,26 @@ def extract_structured_conditions(query: str) -> dict[str, Any]:
     region = _find_by_keywords(normalized_query, REGION_KEYWORDS)
     if region:
         conditions["region"] = region
+
+    moods = [
+        mood
+        for mood, keywords in MOOD_KEYWORDS.items()
+        if any(_normalize_text(keyword) in normalized_query for keyword in keywords)
+    ]
+    if moods:
+        conditions["moods"] = moods
+
+    amenities = [
+        amenity
+        for amenity, keywords in AMENITY_KEYWORDS.items()
+        if any(_normalize_text(keyword) in normalized_query for keyword in keywords)
+    ]
+    if amenities:
+        conditions["amenities"] = amenities
+
+    minimum_rating = _extract_minimum_rating(normalized_query)
+    if minimum_rating is not None:
+        conditions["minAverageRating"] = minimum_rating
 
     # roomType -> rooms[].type
     room_type = _find_by_keywords(normalized_query, ROOM_TYPE_KEYWORDS)
@@ -98,7 +144,7 @@ def extract_structured_conditions(query: str) -> dict[str, Any]:
     if party_external_guest_fee is not None:
         conditions["partyExternalGuestFee"] = party_external_guest_fee
 
-    print(f"[structured_filter] extracted conditions: {conditions}")
+    logger.debug("Extracted guesthouse conditions: %s", conditions)
     return conditions
 
 
@@ -108,7 +154,7 @@ def filter_guesthouses(guesthouses: list[dict], conditions: dict) -> list[dict]:
 
     if not strong_conditions:
         results = [_with_filter_fields(guesthouse) for guesthouse in guesthouses]
-        print(f"[structured_filter] filtered candidates: {len(results)} / {len(guesthouses)}")
+        logger.debug("Filtered guesthouse candidates: %d / %d", len(results), len(guesthouses))
         return results
 
     filtered: list[dict] = []
@@ -118,6 +164,27 @@ def filter_guesthouses(guesthouses: list[dict], conditions: dict) -> list[dict]:
 
         if "region" in strong_conditions and not _matches_region(guesthouse, strong_conditions["region"]):
             continue
+
+        if "moods" in strong_conditions and not _contains_all_values(
+            guesthouse.get("moods", []), strong_conditions["moods"]
+        ):
+            continue
+
+        if "amenities" in strong_conditions and not _contains_all_values(
+            guesthouse.get("amenities", []), strong_conditions["amenities"], allow_partial=True
+        ):
+            continue
+
+        if "minAverageRating" in strong_conditions:
+            average_rating = guesthouse.get("averageRating")
+            review_count = guesthouse.get("reviewCount")
+            if (
+                not isinstance(average_rating, (int, float))
+                or not isinstance(review_count, int)
+                or review_count <= 0
+                or average_rating < strong_conditions["minAverageRating"]
+            ):
+                continue
 
         matched_rooms = _filter_rooms(guesthouse.get("rooms", []), strong_conditions, notes)
         if _has_room_conditions(strong_conditions) and not matched_rooms:
@@ -139,7 +206,7 @@ def filter_guesthouses(guesthouses: list[dict], conditions: dict) -> list[dict]:
         result["filterNotes"] = notes
         filtered.append(result)
 
-    print(f"[structured_filter] filtered candidates: {len(filtered)} / {len(guesthouses)}")
+    logger.debug("Filtered guesthouse candidates: %d / %d", len(filtered), len(guesthouses))
     return filtered
 
 
@@ -289,6 +356,14 @@ def _extract_room_max_price(query: str) -> int | None:
     return None
 
 
+def _extract_minimum_rating(query: str) -> float | None:
+    match = re.search(r"(?:평점|별점)\s*(\d(?:\.\d+)?)\s*점?\s*이상", query)
+    if not match:
+        return None
+    rating = float(match.group(1))
+    return rating if 0 <= rating <= 5 else None
+
+
 def _extract_party_guest_fee(query: str) -> int | None:
     if "파티 무료" in query:
         return 0
@@ -392,3 +467,20 @@ def _has_party_conditions(conditions: dict) -> bool:
         key in conditions
         for key in ["hasParties", "partyType", "isExternalGuestAllowed", "partyGuestFee", "partyExternalGuestFee"]
     )
+
+
+def _contains_all_values(actual_values: Any, expected_values: list[str], allow_partial: bool = False) -> bool:
+    if not isinstance(actual_values, (list, set, tuple)):
+        return False
+    normalized_actual = [_normalize_text(str(value)).replace("_", " ") for value in actual_values]
+    for expected in expected_values:
+        normalized_expected = _normalize_text(expected).replace("_", " ")
+        if allow_partial:
+            if not any(
+                normalized_expected in actual or actual in normalized_expected
+                for actual in normalized_actual
+            ):
+                return False
+        elif normalized_expected not in normalized_actual:
+            return False
+    return True

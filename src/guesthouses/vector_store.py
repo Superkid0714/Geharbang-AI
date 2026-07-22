@@ -67,10 +67,38 @@ def delete_guesthouse_document(
     _get_collection(persist_directory, reset=False).delete(ids=[f"guesthouse-{guesthouse_id}"])
 
 
+def synchronize_guesthouse_documents(
+    documents: list[dict],
+    persist_directory: str = DEFAULT_PERSIST_DIRECTORY,
+) -> dict[str, int]:
+    """Repair missing, changed, and stale rows without resetting the collection."""
+    if documents:
+        _validate_documents(documents)
+    collection = _get_collection(persist_directory, reset=False)
+    indexed = collection.get(include=["documents"])
+    indexed_documents = dict(zip(indexed.get("ids", []), indexed.get("documents", [])))
+    expected_documents = {
+        f"guesthouse-{document['guestHouseId']}": document["content"]
+        for document in documents
+    }
+    changed = [
+        document
+        for document in documents
+        if indexed_documents.get(f"guesthouse-{document['guestHouseId']}") != document["content"]
+    ]
+    stale_ids = sorted(set(indexed_documents) - set(expected_documents))
+    if changed:
+        build_vector_store(changed, persist_directory=persist_directory, reset=False)
+    if stale_ids:
+        collection.delete(ids=stale_ids)
+    return {"upserted": len(changed), "deleted": len(stale_ids), "total": len(documents)}
+
+
 def search_guesthouses(
     query: str,
     top_k: int = 3,
     persist_directory: str = DEFAULT_PERSIST_DIRECTORY,
+    candidate_ids: list[int] | None = None,
 ) -> list[dict]:
     """Search semantically similar guesthouse documents from local Chroma."""
     if not isinstance(query, str) or not query.strip():
@@ -78,14 +106,29 @@ def search_guesthouses(
     if top_k <= 0:
         raise ValueError("top_k must be greater than 0")
 
-    collection = _get_collection(persist_directory, reset=False)
-    query_embedding = _embed_texts([query])[0]
+    if candidate_ids is not None and not candidate_ids:
+        return []
 
-    result = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=top_k,
-        include=["documents", "metadatas", "distances"],
-    )
+    collection = _get_collection(persist_directory, reset=False)
+    count = collection.count()
+    if count == 0:
+        return []
+    query_embedding = _embed_texts([query])[0]
+    query_arguments: dict[str, Any] = {
+        "query_embeddings": [query_embedding],
+        "n_results": min(top_k, count),
+        "include": ["documents", "metadatas", "distances"],
+    }
+    if candidate_ids is not None:
+        unique_ids = sorted(set(candidate_ids))
+        query_arguments["where"] = (
+            {"guestHouseId": {"$eq": unique_ids[0]}}
+            if len(unique_ids) == 1
+            else {"guestHouseId": {"$in": unique_ids}}
+        )
+        query_arguments["n_results"] = min(top_k, len(unique_ids), count)
+
+    result = collection.query(**query_arguments)
 
     return _format_search_results(result)
 

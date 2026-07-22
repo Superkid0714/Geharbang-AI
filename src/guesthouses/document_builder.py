@@ -13,6 +13,7 @@ MOOD_SEARCH_PHRASES = {
     "활발한": "활발하게 사람들과 어울리고 새로운 친구를 만들고 싶은 여행자에게 어울립니다.",
     "감성_느좋": "감성적인 분위기, 느낌 좋은 숙소, 분위기 좋은 게스트하우스를 찾는 여행자에게 어울립니다.",
     "파티X": "파티가 없는 숙소, 술자리나 시끄러운 모임 없이 조용히 쉬고 싶은 여행자에게 어울립니다.",
+    "파티_X": "파티가 없는 숙소, 술자리나 시끄러운 모임 없이 조용히 쉬고 싶은 여행자에게 어울립니다.",
     "솔로": "혼자 여행 온 사람, 혼자 온 게스트, 솔로 여행자도 어색하지 않게 머물기 좋은 숙소입니다.",
     "한달살이": "장기 숙박, 제주 한달살이, 오래 머무는 여행자에게 어울릴 수 있습니다.",
 }
@@ -30,11 +31,14 @@ def build_guesthouse_document(guesthouse: dict, index: int | None = None) -> dic
     _append_amenities(content_parts, guesthouse)
     _append_rooms(content_parts, guesthouse)
     _append_parties(content_parts, guesthouse)
+    _append_review_summary(content_parts, guesthouse)
     _append_owner_message(content_parts, guesthouse)
 
     return {
         "guestHouseId": guesthouse_id,
         "guestHouseName": guesthouse_name,
+        "averageRating": guesthouse.get("averageRating", 0),
+        "reviewCount": guesthouse.get("reviewCount", 0),
         "content": "\n".join(part for part in content_parts if part),
     }
 
@@ -176,6 +180,13 @@ def _append_owner_message(parts: list[str], guesthouse: dict) -> None:
     owner_message = guesthouse.get("ownerMessage")
     if _has_value(owner_message):
         parts.append(f"사장님 메시지: {owner_message}")
+
+
+def _append_review_summary(parts: list[str], guesthouse: dict) -> None:
+    review_count = guesthouse.get("reviewCount")
+    average_rating = guesthouse.get("averageRating")
+    if isinstance(review_count, int) and review_count > 0 and isinstance(average_rating, (int, float)):
+        parts.append(f"이용자 리뷰는 {review_count}개이고 평균 평점은 5점 만점에 {average_rating}점입니다.")
 
 
 def _append_labeled_value(details: list[str], label: str, value: Any) -> None:

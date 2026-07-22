@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import logging
 import threading
 import time
 import uuid
@@ -25,9 +26,12 @@ from src.staff_steps.vector_store import (
     delete_staff_recruitment_document,
     upsert_staff_recruitment_document,
 )
+from src.index_reconciler import reconcile_dynamic_indexes
 
 
 load_dotenv(dotenv_path=".env")
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Geharbang AI", version="0.1.0")
 app.add_middleware(
@@ -46,6 +50,13 @@ MAX_SESSIONS = 10_000
 _sessions: dict[str, tuple[float, ConversationState]] = {}
 _sessions_lock = threading.Lock()
 _inference_lock = threading.Lock()
+_reconciliation_stop = threading.Event()
+_reconciliation_thread: threading.Thread | None = None
+_reconciliation_status: dict[str, object] = {
+    "lastSuccessAt": None,
+    "lastResult": None,
+    "lastError": None,
+}
 
 
 def _evict_expired_sessions_locked() -> None:
@@ -85,6 +96,7 @@ def health() -> dict:
             "serviceGuide": service_guide_ready,
         },
         "geminiConfigured": bool(os.getenv("GEMINI_API_KEY")),
+        "reconciliation": dict(_reconciliation_status),
     }
 
 
@@ -180,3 +192,46 @@ def remove_staff_recruitment(
     with _inference_lock:
         delete_staff_recruitment_document(recruitment_id)
     return Response(status_code=204)
+
+
+def _reconciliation_loop() -> None:
+    initial_delay = max(0, int(os.getenv("INDEX_RECONCILE_START_DELAY_SECONDS", "60")))
+    interval = max(300, int(os.getenv("INDEX_RECONCILE_INTERVAL_SECONDS", "21600")))
+    if _reconciliation_stop.wait(initial_delay):
+        return
+    while not _reconciliation_stop.is_set():
+        try:
+            with _inference_lock:
+                result = reconcile_dynamic_indexes()
+            _reconciliation_status.update({
+                "lastSuccessAt": int(time.time()),
+                "lastResult": result,
+                "lastError": None,
+            })
+            logger.info("AI index reconciliation completed: %s", result)
+        except Exception as error:  # background repair must not stop chat traffic
+            _reconciliation_status["lastError"] = str(error)
+            logger.exception("AI index reconciliation failed")
+        if _reconciliation_stop.wait(interval):
+            return
+
+
+@app.on_event("startup")
+def start_index_reconciliation() -> None:
+    global _reconciliation_thread
+    if os.getenv("INDEX_RECONCILE_ENABLED", "true").casefold() not in {"true", "1", "yes"}:
+        return
+    _reconciliation_stop.clear()
+    _reconciliation_thread = threading.Thread(
+        target=_reconciliation_loop,
+        name="ai-index-reconciler",
+        daemon=True,
+    )
+    _reconciliation_thread.start()
+
+
+@app.on_event("shutdown")
+def stop_index_reconciliation() -> None:
+    _reconciliation_stop.set()
+    if _reconciliation_thread is not None:
+        _reconciliation_thread.join(timeout=5)

@@ -70,14 +70,42 @@ def delete_staff_recruitment_document(
     _get_collection(persist_directory, reset=False).delete(ids=[f"staff-recruitment-{recruitment_id}"])
 
 
+def synchronize_staff_recruitment_documents(
+    documents: list[dict],
+    persist_directory: str = DEFAULT_PERSIST_DIRECTORY,
+) -> dict[str, int]:
+    """Repair missing, changed, and stale rows without resetting the collection."""
+    collection = _get_collection(persist_directory, reset=False)
+    indexed = collection.get(include=["documents"])
+    indexed_documents = dict(zip(indexed.get("ids", []), indexed.get("documents", [])))
+    expected_documents = {
+        f"staff-recruitment-{document['staffRecruitmentId']}": document["content"]
+        for document in documents
+    }
+    changed = [
+        document
+        for document in documents
+        if indexed_documents.get(f"staff-recruitment-{document['staffRecruitmentId']}") != document["content"]
+    ]
+    stale_ids = sorted(set(indexed_documents) - set(expected_documents))
+    if changed:
+        build_vector_store(changed, persist_directory=persist_directory, reset=False)
+    if stale_ids:
+        collection.delete(ids=stale_ids)
+    return {"upserted": len(changed), "deleted": len(stale_ids), "total": len(documents)}
+
+
 def search_staff_recruitments(
     query: str,
     top_k: int = 3,
     persist_directory: str = DEFAULT_PERSIST_DIRECTORY,
     conditions: dict[str, str] | None = None,
+    candidate_ids: list[int] | None = None,
 ) -> list[dict]:
     if not query.strip():
         raise ValueError("query must not be empty")
+    if candidate_ids is not None and not candidate_ids:
+        return []
     collection = _get_collection(persist_directory, reset=False)
     count = collection.count()
     if count == 0:
@@ -88,6 +116,15 @@ def search_staff_recruitments(
         "include": ["documents", "metadatas", "distances"],
     }
     where = _build_where(conditions or {})
+    if candidate_ids is not None:
+        unique_ids = sorted(set(candidate_ids))
+        id_clause = (
+            {"staffRecruitmentId": {"$eq": unique_ids[0]}}
+            if len(unique_ids) == 1
+            else {"staffRecruitmentId": {"$in": unique_ids}}
+        )
+        where = _combine_where(where, id_clause)
+        query_arguments["n_results"] = min(top_k, len(unique_ids), count)
     if where:
         query_arguments["where"] = where
     result = collection.query(
@@ -140,3 +177,9 @@ def _build_where(conditions: dict[str, str]) -> dict | None:
     if len(clauses) == 1:
         return clauses[0]
     return {"$and": clauses}
+
+
+def _combine_where(first: dict | None, second: dict) -> dict:
+    if first is None:
+        return second
+    return {"$and": [first, second]}

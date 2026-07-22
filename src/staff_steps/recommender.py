@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from src.guesthouses.recommender import _generate_gemini_answer
+from src.staff_steps.data_loader import load_staff_recruitment, load_staff_recruitments
+from src.staff_steps.document_builder import build_staff_recruitment_document, build_staff_recruitment_documents
 from src.staff_steps.vector_store import search_staff_recruitments
-from src.staff_steps.structured_filter import extract_staff_conditions
+from src.staff_steps.structured_filter import extract_staff_conditions, filter_staff_recruitments
 
 
 FOLLOW_UP_MARKERS = ["그 공고", "거기", "그곳", "근무는", "기간은", "조건은", "복지는", "업무는"]
@@ -13,15 +15,45 @@ def answer_staff_chat(query: str, previous_result: dict | None = None) -> tuple[
         raise ValueError("query must not be empty")
 
     if previous_result is not None and any(marker in query for marker in FOLLOW_UP_MARKERS):
-        result = previous_result
+        result = _load_fresh_staff_result(previous_result)
     else:
         conditions = extract_staff_conditions(query)
-        results = search_staff_recruitments(query, top_k=1, conditions=conditions)
-        if not results:
+        current_items = load_staff_recruitments()
+        filtered_items = filter_staff_recruitments(current_items, conditions)
+        if not filtered_items:
             return _no_result_message(conditions), previous_result
-        result = results[0]
+        candidate_ids = [int(item["id"]) for item in filtered_items]
+        results = search_staff_recruitments(
+            query,
+            top_k=min(5, len(candidate_ids)),
+            conditions=None,
+            candidate_ids=candidate_ids,
+        )
+        if not results:
+            result = build_staff_recruitment_document(filtered_items[0])
+        else:
+            current_documents = {
+                int(document["staffRecruitmentId"]): document
+                for document in build_staff_recruitment_documents(filtered_items)
+            }
+            result = build_staff_recruitment_document(filtered_items[0])
+            for indexed_result in results:
+                recruitment_id = indexed_result.get("staffRecruitmentId")
+                if isinstance(recruitment_id, int) and recruitment_id in current_documents:
+                    result = {
+                        **current_documents[recruitment_id],
+                        "distance": indexed_result.get("distance"),
+                    }
+                    break
 
     return _generate_gemini_answer(_build_prompt(query, result)), result
+
+
+def _load_fresh_staff_result(previous_result: dict) -> dict:
+    recruitment_id = previous_result.get("staffRecruitmentId")
+    if not isinstance(recruitment_id, int):
+        return previous_result
+    return build_staff_recruitment_document(load_staff_recruitment(recruitment_id))
 
 
 def _no_result_message(conditions: dict[str, str]) -> str:
