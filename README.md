@@ -3,7 +3,8 @@
 게하르방의 AI 채팅 프로젝트입니다. 현재 공통 라우터가 질문을 게스트하우스,
 스텝 공고, 제주 관광, 게하르방 이용 안내로 분류합니다. 실제 RAG 답변은 우선
 게스트하우스와 스텝 공고는 백엔드 DB의 활성 데이터에 연결되어 있고,
-게하르방 이용 안내는 검증된 Markdown 문서 기반 RAG에 연결되어 있습니다.
+제주 관광은 비공개 PDF 자료, 게하르방 이용 안내는 검증된 Markdown 문서 기반
+RAG에 연결되어 있습니다.
 
 ## 설치
 
@@ -39,6 +40,11 @@ python main.py
 만료되거나 컨테이너가 재시작되어도 백엔드가 마지막 `context`를 다시 전달하면
 짧은 후속 질문의 추천 대상을 이어갈 수 있습니다.
 
+이미지 채팅은 `message`, 선택 `sessionId`, 선택 `context`, `image` part를 받습니다.
+JPEG, PNG, WebP, HEIC/HEIF만 허용하며 요청 MIME과 실제 파일 시그니처가
+일치해야 합니다. 이미지는 Gemini로 먼저 설명한 뒤 기존 도메인 분류와 RAG 검색에
+결합하며, 장소를 확실히 식별할 근거가 없으면 특정 장소명을 추측하지 않습니다.
+
 요청 예시:
 
 ```json
@@ -59,6 +65,14 @@ python rebuild_index.py --domain staff-steps
 
 ```bash
 python rebuild_index.py --domain service-guide
+```
+
+제주 여행 PDF만 추출·OCR·색인하려면 다음 명령을 사용합니다. PDF 원본과 추출
+캐시, 벡터 인덱스는 Git에 포함되지 않습니다. 상세한 로컬·운영 서버 설정은
+[`docs/jeju-travel-rag.md`](docs/jeju-travel-rag.md)를 참고합니다.
+
+```bash
+python rebuild_index.py --domain jeju-travel
 ```
 
 ## DB 실시간 동기화
@@ -108,11 +122,14 @@ limit_req_zone $binary_remote_addr zone=ai_chat_per_ip:10m rate=12r/m;
 limit_req_status 429;
 ```
 
-`geharbang.org`의 `server` 블록에서는 AI 채팅 경로에만 순간 6회까지 허용합니다.
+`geharbang.org`의 `server` 블록에서는 텍스트와 이미지 AI 채팅 경로에만 순간
+6회까지 허용합니다. 이미지 본문은 애플리케이션 제한보다 약간 큰 6MB까지만
+Nginx에서 받습니다.
 
 ```nginx
-location = /api/v1/ai/chat {
+location ~ ^/api/v1/ai/chat(?:/image)?$ {
     limit_req zone=ai_chat_per_ip burst=6 nodelay;
+    client_max_body_size 6m;
     proxy_pass http://api;
     proxy_connect_timeout 5s;
     proxy_read_timeout 100s;
@@ -128,8 +145,13 @@ curl http://127.0.0.1:8001/ready
 
 ## 테스트
 
-라우터 테스트는 외부 API나 임베딩 모델 없이 실행할 수 있습니다.
+전체 테스트는 외부 Gemini 호출 없이 실행할 수 있습니다. 개발 환경에 `pytest`를
+설치한 뒤 실행합니다.
 
 ```bash
-python -m unittest discover -s tests
+.venv/bin/python -m pip install pytest
+.venv/bin/python -m pytest -q
 ```
+
+현재 전체 스위트에는 라우터, 최신 DB 기반 추천, 인덱스 정합성 복구, 문맥
+직렬화와 이미지 multipart 검증이 포함됩니다.
