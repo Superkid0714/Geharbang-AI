@@ -11,6 +11,7 @@ class ChatDomain(StrEnum):
     JEJU_TRAVEL = "jeju_travel"
     GEHARBANG_SERVICE = "geharbang_service"
     GREETING = "greeting"
+    UNCLEAR = "unclear"
     OUT_OF_SCOPE = "out_of_scope"
 
 

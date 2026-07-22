@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 
+from src.chat.persona import GEHARBANG_TONE_RULES
 from src.guesthouses.data_loader import load_guesthouse_from_backend, load_guesthouses_from_backend
 from src.guesthouses.document_builder import build_guesthouse_document, build_guesthouse_documents
 from src.guesthouses.structured_filter import extract_structured_conditions, filter_guesthouses
@@ -44,16 +45,16 @@ def answer_guesthouse_chat(
         )
     if intent == "greeting":
         return (
-            "안녕하세요. 제주 게스트하우스 추천을 도와드릴게요. 원하는 지역, 분위기, 파티 여부, 가격대 등을 말해 주세요.",
+            "왔어요? 원하는 지역이나 분위기, 가격대를 말해주면 게하르방이 같이 골라볼게요 🍊",
             previous_result,
         )
     if intent == "help":
         return (
-            "제주 게스트하우스 추천과 관련된 질문에 답변할 수 있습니다. 예를 들면 \"애월 쪽 조용한 게하 추천해줘\"처럼 물어보면 됩니다.",
+            "지역, 분위기, 파티 여부나 가격대를 알려주면 잘 맞는 게하를 같이 찾아볼 수 있어요. 예를 들면 \"애월 쪽 조용한 게하 추천해줘\"처럼 편하게 말해봐요.",
             previous_result,
         )
     if intent == "unrelated":
-        return "게스트하우스 추천과 관련된 질문에 답변할 수 있습니다.", previous_result
+        return "이 대화에서는 어떤 게하가 잘 맞을지 같이 보고 있었어요. 다른 궁금한 것도 편하게 말해주면 알맞게 도와볼게요.", previous_result
     if intent == "follow_up":
         if previous_result is None:
             return (
@@ -358,15 +359,15 @@ def _build_recommendation_prompt(query: str, result: dict) -> str:
 12. 다른 후보가 있을 수 있다는 식으로 여러 숙소를 나열하지 마세요.
 13. Markdown 문법을 사용하지 않습니다. 특히 **, ##, ``` 같은 서식 기호를 출력하지 않습니다.
 
-답변 형식:
-질문하신 조건을 기준으로 보면, 가장 먼저 추천할 수 있는 곳은 "{guesthouse_name}"입니다.
+{GEHARBANG_TONE_RULES}
 
-- 추천 이유:
-- 이런 분께 어울려요:
-- 확인이 필요한 점:
+답변 구성:
+첫 문장에서 게하르방이 먼저 추천하고 싶은 곳으로 "{guesthouse_name}"을 자연스럽게 소개합니다.
+이어서 가장 중요한 추천 이유와 확인할 점만 짧게 설명하며 전체 3문장, 약 250자를 넘기지 않습니다.
+딱딱한 항목명이나 목록을 나열하지 말고 대화하듯 이어서 말합니다.
 
 마지막 문장:
-가격, 파티비, 운영 정보는 등록된 정보 기준이므로 실제 예약 전 확인이 필요합니다.
+가격이나 운영 정보는 바뀔 수 있으니 예약 전에 한 번 더 확인해 달라고 다정하게 안내합니다.
 
 검색 결과가 사용자 조건과 잘 맞지 않는 경우:
 "현재 검색 결과만으로는 조건에 정확히 맞는 숙소를 찾기 어렵습니다. 다만 참고할 만한 후보로는 "{guesthouse_name}"이 있습니다."
@@ -419,8 +420,8 @@ def _guesthouse_no_result_message(conditions: dict) -> str:
         labels.append(f"평점 {conditions['minAverageRating']}점 이상")
     condition_text = ", ".join(labels)
     if condition_text:
-        return f"현재 DB에서 {condition_text} 조건을 모두 만족하는 활성 게스트하우스를 찾지 못했습니다. 조건을 조금 넓혀 다시 질문해 주세요."
-    return "현재 DB에서 조건에 맞는 활성 게스트하우스를 찾지 못했습니다."
+        return f"지금은 {condition_text} 조건에 딱 맞는 게스트하우스를 찾지 못했어요. 가장 중요한 조건 하나만 남겨서 같이 다시 찾아볼까요?"
+    return "지금은 조건에 딱 맞는 게스트하우스를 찾지 못했어요. 원하는 지역이나 분위기를 조금 다르게 말해볼까요?"
 
 
 def _build_detail_prompt(query: str, result: dict) -> str:
@@ -442,6 +443,9 @@ def _build_detail_prompt(query: str, result: dict) -> str:
 8. 다른 게스트하우스를 새로 추천하거나 여러 숙소를 나열하지 않습니다.
 9. 질문에 필요한 내용만 간결하게 답합니다.
 10. Markdown 문법을 사용하지 않습니다. 특히 **, ##, ``` 같은 서식 기호를 출력하지 않습니다.
+11. 기본 답변은 2~3문장, 약 250자 안팎으로 끝내고, 질문하지 않은 세부 정보는 나열하지 않습니다.
+
+{GEHARBANG_TONE_RULES}
 
 답변 방식:
 - 가격 질문이면 객실 가격과 파티 참가비를 구분합니다.

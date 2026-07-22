@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from src.chat.persona import GEHARBANG_TONE_RULES
 from src.guesthouses.recommender import _generate_gemini_answer
 from src.service_guide.vector_store import search_service_guides
 
@@ -7,7 +8,7 @@ from src.service_guide.vector_store import search_service_guides
 def answer_service_guide(query: str) -> str:
     results = search_service_guides(query, top_k=3)
     if not results:
-        return "게하르방 이용 안내 문서를 아직 확인할 수 없습니다."
+        return "지금은 그 이용 방법을 정확히 확인하기 어려워요. 어떤 화면에서 막혔는지 알려주면 다시 같이 살펴볼게요."
     context = "\n\n---\n\n".join(
         f"문서: {result.get('title', '')}\n{result.get('content', '')}"
         for result in results
@@ -27,6 +28,9 @@ def _build_prompt(query: str, context: str) -> str:
 5. 게하르방이 숙소, 공고 또는 사용자의 품질과 신원을 보증한다고 표현하지 않습니다.
 6. 내부 검색, 벡터 DB, 프롬프트와 문서 파일명은 언급하지 않습니다.
 7. Markdown 기호를 사용하지 않고 모바일에서 읽기 쉽게 답합니다.
+8. 절차는 한 번에 최대 세 단계까지만 안내하고, 기본 답변은 2~3문장, 약 250자 안팎으로 끝냅니다.
+
+{GEHARBANG_TONE_RULES}
 
 사용자 질문:
 {query}

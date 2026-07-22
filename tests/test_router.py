@@ -1,7 +1,9 @@
+import os
 import unittest
+from unittest.mock import patch
 
 from src.chat.router import route_chat_query
-from src.chat.schemas import ChatDomain
+from src.chat.schemas import ChatDomain, RouteDecision
 
 
 class ChatRouterTest(unittest.TestCase):
@@ -35,6 +37,24 @@ class ChatRouterTest(unittest.TestCase):
 
     def test_unknown_query_is_out_of_scope(self) -> None:
         self.assertEqual(self.route("양자역학을 설명해줘"), ChatDomain.OUT_OF_SCOPE)
+
+    @patch("src.chat.router._route_with_gemini")
+    def test_generic_interview_worry_is_not_staff_step(self, mock_route_with_gemini) -> None:
+        mock_route_with_gemini.return_value = RouteDecision(
+            ChatDomain.STAFF_STEP,
+            0.91,
+            "면접이라는 단어를 스텝 질문으로 오인",
+        )
+        with patch.dict(os.environ, {"GEMINI_API_KEY": "test-key"}):
+            decision = route_chat_query("다음 주 면접인데 너무 긴장돼. 어떻게 준비할까?")
+
+        self.assertEqual(decision.domain, ChatDomain.OUT_OF_SCOPE)
+        self.assertEqual(decision.reason, "generic_work_or_personal_question")
+
+    def test_gibberish_query_is_unclear(self) -> None:
+        for query in ["ㅋㅋㅋㅋㅋㅋ", "ㅁㄴㅇㄹ", "asdfasdf", "!@#$%^"]:
+            with self.subTest(query=query):
+                self.assertEqual(self.route(query), ChatDomain.UNCLEAR)
 
 
 if __name__ == "__main__":

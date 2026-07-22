@@ -40,6 +40,8 @@ def route_chat_query(
         raise ValueError("query must not be empty")
 
     normalized = _normalize(query)
+    if _looks_like_gibberish(normalized):
+        return RouteDecision(ChatDomain.UNCLEAR, 1.0, "gibberish")
     if normalized in GREETING_WORDS:
         return RouteDecision(ChatDomain.GREETING, 1.0, "greeting")
 
@@ -68,7 +70,17 @@ def route_chat_query(
         return RouteDecision(best_domain, confidence, "keyword")
 
     if use_llm_fallback and os.getenv("GEMINI_API_KEY"):
-        return _route_with_gemini(query, active_domain)
+        decision = _route_with_gemini(query, active_domain)
+        if (
+            decision.domain == ChatDomain.STAFF_STEP
+            and not _has_staff_domain_evidence(normalized, active_domain)
+        ):
+            return RouteDecision(
+                ChatDomain.OUT_OF_SCOPE,
+                0.72,
+                "generic_work_or_personal_question",
+            )
+        return decision
 
     if best_score > 0 and best_score > second_score:
         return RouteDecision(best_domain, 0.62, "weak_keyword")
@@ -90,9 +102,11 @@ def _route_with_gemini(query: str, active_domain: ChatDomain | None) -> RouteDec
 - jeju_travel: 제주 관광지, 음식점, 카페, 날씨와 여행 정보
 - geharbang_service: 게하르방 앱 기능, 계정, 찜, 지원 방법, 채팅과 이용 안내
 - greeting: 인사
-- out_of_scope: 위 분야와 무관하거나 판단할 정보가 부족함
+- out_of_scope: 위 네 분야와 무관하지만 의미가 분명한 일반 지식, 일상 대화 또는 요청
+- unclear: 키보드 난타, 무작위 문자, 의미 없는 말, 맥락이 없어 무엇을 묻는지 전혀 알 수 없는 입력
 
 "스텝을 제공하는 게하", "게하에서 일하고 싶어"는 staff_step입니다.
+일반 회사의 면접·직장 고민·진로 상담은 staff_step이 아니라 out_of_scope입니다. 질문에 게스트하우스 스텝, 공고 또는 제주 지역의 구체적인 구인 조건이 드러날 때만 staff_step으로 분류하세요.
 직전 대화 domain이 있고 대상을 생략한 후속 질문이면 그 domain을 유지합니다.
 직전 domain: {active_domain.value if active_domain else "없음"}
 질문: {query}
@@ -131,13 +145,36 @@ def _keyword_score(query: str, keywords: set[str]) -> int:
 
 
 def _staff_context_bonus(query: str) -> int:
-    matches = sum(
-        1
-        for phrase in ["일하고", "일자리", "구해", "구인", "지원", "근무", "스텝"]
-        if phrase in query
+    has_guesthouse_context = any(
+        marker in query for marker in ["게하", "게스트하우스"]
     )
-    # A work-seeking verb is stronger evidence than a generic accommodation noun.
-    return matches + 1 if matches else 0
+    has_work_context = any(
+        marker in query
+        for marker in ["일하고", "일자리", "구해", "구인", "지원", "근무", "스텝"]
+    )
+    # Generic work worries belong to general chat. A work expression only wins
+    # over accommodation keywords when guesthouse context is also present.
+    return 3 if has_guesthouse_context and has_work_context else 0
+
+
+def _has_staff_domain_evidence(
+    query: str,
+    active_domain: ChatDomain | None,
+) -> bool:
+    if active_domain == ChatDomain.STAFF_STEP and _looks_like_follow_up(query):
+        return True
+    if any(marker in query for marker in ["스텝", "스태프", "구인", "스텝 공고"]):
+        return True
+    if any(place in query for place in ["게하", "게스트하우스"]) and any(
+        marker in query
+        for marker in ["일하고", "일자리", "알바", "근무", "지원", "공고", "구해"]
+    ):
+        return True
+    recruitment_terms = {
+        "공고", "근무", "알바", "일자리", "지원 자격", "근무 기간",
+        "근무시간", "근무 시간", "휴무", "복지", "급여",
+    }
+    return _keyword_score(query, recruitment_terms) >= 2
 
 
 def _looks_like_follow_up(query: str) -> bool:
@@ -160,3 +197,32 @@ def _looks_like_service_how_to(query: str) -> bool:
         and any(marker in query for marker in feature_markers)
         and not any(marker in query for marker in search_markers)
     )
+
+
+def _looks_like_gibberish(query: str) -> bool:
+    compact = re.sub(r"\s+", "", query)
+    if not compact:
+        return True
+    if not re.search(r"[0-9a-z가-힣ㄱ-ㅎㅏ-ㅣ]", compact):
+        return True
+    if re.fullmatch(r"[0-9]+", compact):
+        return True
+    if re.fullmatch(r"[ㄱ-ㅎㅏ-ㅣ]+", compact) and len(compact) >= 3:
+        return True
+    if len(compact) >= 4 and len(set(compact)) <= 2:
+        return True
+    # 자모/한글이 섞이지 않은 순수 영문+숫자 문자열이 앞뒤로 똑같이 반복될 때만
+    # 키보드를 무의미하게 두 번 친 것("asdfasdf")으로 간주한다. 이 조건이 없으면
+    # "감사합니다감사합니다"처럼 실제 문장을 강조하려고 반복한 경우까지 걸러진다.
+    if (
+        len(compact) >= 6
+        and len(compact) % 2 == 0
+        and re.fullmatch(r"[0-9a-z]+", compact)
+    ):
+        midpoint = len(compact) // 2
+        if compact[:midpoint] == compact[midpoint:]:
+            return True
+    if re.fullmatch(r"[a-z]+", compact) and len(compact) >= 4:
+        if not re.search(r"[aeiouy]", compact):
+            return True
+    return False
