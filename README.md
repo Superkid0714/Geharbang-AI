@@ -31,14 +31,21 @@ python main.py
 - `GET /health`: Gemini 및 인덱스 준비 상태
 - `GET /ready`: 운영 트래픽을 받을 준비가 되었는지 확인 (미준비 시 503)
 - `POST /chat`: 질문 전송
+- `POST /chat/image`: 이미지와 질문 전송 (`multipart/form-data`, 이미지 최대 5MB)
 - `DELETE /chat/{sessionId}`: 대화 상태 초기화
+
+`POST /chat`의 `context`는 Spring 백엔드가 로그인 사용자의 대화 문맥을
+영구 저장하고 복원할 때 사용하는 내부 필드입니다. AI 서버의 30분 메모리 세션이
+만료되거나 컨테이너가 재시작되어도 백엔드가 마지막 `context`를 다시 전달하면
+짧은 후속 질문의 추천 대상을 이어갈 수 있습니다.
 
 요청 예시:
 
 ```json
 {
   "message": "애월에서 한 달 일할 스텝 공고 추천해줘",
-  "sessionId": null
+  "sessionId": null,
+  "context": null
 }
 ```
 
