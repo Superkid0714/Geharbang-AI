@@ -6,14 +6,21 @@ import threading
 import time
 import uuid
 import secrets
+import json
+from typing import Any
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Header, HTTPException, Response
+from fastapi import FastAPI, File, Form, Header, HTTPException, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from src.chat.orchestrator import answer_chat
-from src.chat.schemas import ConversationState
+from src.chat.image_analyzer import describe_chat_image, image_content_matches_mime_type
+from src.chat.schemas import (
+    ConversationState,
+    deserialize_conversation_state,
+    serialize_conversation_state,
+)
 from src.guesthouses.vector_store import has_vector_store_documents as has_guesthouse_index
 from src.staff_steps.vector_store import has_vector_store_documents as has_staff_index
 from src.service_guide.vector_store import has_vector_store_documents as has_service_guide_index
@@ -44,6 +51,16 @@ app.add_middleware(
 
 SESSION_TTL_SECONDS = 30 * 60  # 30분 미사용 세션은 다음 접근/스윕 시 정리한다.
 MAX_SESSIONS = 10_000
+MAX_CHAT_IMAGE_BYTES = 5 * 1024 * 1024
+SUPPORTED_CHAT_IMAGE_TYPES = {
+    "image/jpeg",
+    "image/jpg",
+    "image/pjpeg",
+    "image/png",
+    "image/webp",
+    "image/heic",
+    "image/heif",
+}
 
 # session_id -> (마지막 접근 시각, 대화 상태). FE가 명시적으로 reset을 호출하지 않아도
 # 오래된 세션은 아래 _evict_expired_sessions_locked에서 자동으로 제거되어 메모리가 무한히 쌓이지 않는다.
@@ -74,6 +91,7 @@ def _evict_expired_sessions_locked() -> None:
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=1000)
     sessionId: str | None = Field(default=None, max_length=100)
+    context: dict[str, Any] | None = None
 
 
 class ChatResponseBody(BaseModel):
@@ -81,6 +99,7 @@ class ChatResponseBody(BaseModel):
     answer: str
     domain: str
     confidence: float
+    context: dict[str, Any]
 
 
 @app.get("/health")
@@ -110,10 +129,7 @@ def ready() -> dict:
 
 @app.post("/chat", response_model=ChatResponseBody)
 def chat(request: ChatRequest) -> ChatResponseBody:
-    session_id = request.sessionId or str(uuid.uuid4())
-    with _sessions_lock:
-        _evict_expired_sessions_locked()
-        _, state = _sessions.get(session_id, (0.0, ConversationState()))
+    session_id, state = _load_conversation_state(request.sessionId, request.context)
 
     try:
         # BGE-M3 is shared in-process; serialize inference to avoid model races.
@@ -122,6 +138,82 @@ def chat(request: ChatRequest) -> ChatResponseBody:
     except (ValueError, RuntimeError, ImportError) as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
 
+    return _save_session_and_build_response(session_id, response, next_state)
+
+
+@app.post("/chat/image", response_model=ChatResponseBody)
+async def chat_with_image(
+    message: str = Form(..., min_length=1, max_length=1000),
+    sessionId: str | None = Form(default=None, max_length=100),
+    context: str | None = Form(default=None),
+    image: UploadFile = File(...),
+) -> ChatResponseBody:
+    received_mime_type = (image.content_type or "").split(";", 1)[0].strip().lower()
+    if received_mime_type not in SUPPORTED_CHAT_IMAGE_TYPES:
+        raise HTTPException(status_code=415, detail="지원하지 않는 이미지 형식입니다.")
+    mime_type = (
+        "image/jpeg"
+        if received_mime_type in {"image/jpg", "image/pjpeg"}
+        else received_mime_type
+    )
+
+    image_bytes = await image.read(MAX_CHAT_IMAGE_BYTES + 1)
+    if len(image_bytes) > MAX_CHAT_IMAGE_BYTES:
+        raise HTTPException(status_code=413, detail="이미지는 5MB 이하만 가능합니다.")
+    if not image_bytes:
+        raise HTTPException(status_code=400, detail="이미지 파일이 비어 있습니다.")
+    if not image_content_matches_mime_type(image_bytes, received_mime_type):
+        raise HTTPException(
+            status_code=415,
+            detail="파일 내용과 이미지 형식이 일치하지 않습니다.",
+        )
+
+    context_payload = None
+    if context:
+        try:
+            parsed_context = json.loads(context)
+        except json.JSONDecodeError as error:
+            raise HTTPException(status_code=400, detail="대화 문맥 형식이 올바르지 않습니다.") from error
+        if not isinstance(parsed_context, dict):
+            raise HTTPException(status_code=400, detail="대화 문맥은 JSON 객체여야 합니다.")
+        context_payload = parsed_context
+
+    session_id, state = _load_conversation_state(sessionId, context_payload)
+    try:
+        with _inference_lock:
+            image_description = describe_chat_image(image_bytes, mime_type, message)
+            enriched_query = (
+                f"{message}\n\n"
+                f"첨부 이미지에서 객관적으로 확인된 내용: {image_description}"
+            )
+            response, next_state = answer_chat(enriched_query, state)
+    except (ValueError, RuntimeError, ImportError) as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+
+    return _save_session_and_build_response(session_id, response, next_state)
+
+
+def _load_conversation_state(
+    requested_session_id: str | None,
+    context: dict[str, Any] | None,
+) -> tuple[str, ConversationState]:
+    session_id = requested_session_id or str(uuid.uuid4())
+    with _sessions_lock:
+        _evict_expired_sessions_locked()
+        saved_session = _sessions.get(session_id)
+        state = (
+            saved_session[1]
+            if saved_session is not None
+            else deserialize_conversation_state(context)
+        )
+    return session_id, state
+
+
+def _save_session_and_build_response(
+    session_id: str,
+    response: Any,
+    next_state: ConversationState,
+) -> ChatResponseBody:
     with _sessions_lock:
         _sessions[session_id] = (time.monotonic(), next_state)
         if len(_sessions) > MAX_SESSIONS:
@@ -133,6 +225,7 @@ def chat(request: ChatRequest) -> ChatResponseBody:
         answer=response.answer,
         domain=response.domain.value,
         confidence=response.confidence,
+        context=serialize_conversation_state(next_state),
     )
 
 
