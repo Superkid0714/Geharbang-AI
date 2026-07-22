@@ -3,6 +3,7 @@ import argparse
 from src.guesthouses.data_loader import load_guesthouses_from_backend
 from src.guesthouses.document_builder import build_guesthouse_documents
 from src.guesthouses.vector_store import build_vector_store
+from src.guesthouses.vector_store import clear_vector_store as clear_guesthouse_vector_store
 from src.staff_steps.data_loader import load_staff_recruitments
 from src.staff_steps.document_builder import build_staff_recruitment_documents
 from src.staff_steps.vector_store import (
@@ -45,6 +46,10 @@ def rebuild_guesthouse_index() -> None:
     print("백엔드 DB의 활성 게스트하우스 로드 및 검증 중...")
     guesthouses = load_guesthouses_from_backend()
     print(f"게스트하우스 개수: {len(guesthouses)}")
+    if not guesthouses:
+        clear_guesthouse_vector_store()
+        print("활성 게스트하우스가 없어 기존 게스트하우스 인덱스를 비웠습니다.")
+        return
 
     print("검색용 문서 생성 중...")
     documents = build_guesthouse_documents(guesthouses)

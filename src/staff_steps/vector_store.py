@@ -148,6 +148,20 @@ def has_vector_store_documents(persist_directory: str = DEFAULT_PERSIST_DIRECTOR
         return False
 
 
+def is_vector_store_initialized(
+    persist_directory: str = DEFAULT_PERSIST_DIRECTORY,
+) -> bool:
+    """Return True when synchronization created the collection, even if the DB is empty."""
+    if not Path(persist_directory).exists():
+        return False
+    try:
+        import chromadb
+        chromadb.PersistentClient(path=persist_directory).get_collection(COLLECTION_NAME)
+        return True
+    except Exception:
+        return False
+
+
 def _get_collection(persist_directory: str, reset: bool) -> Any:
     try:
         import chromadb

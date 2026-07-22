@@ -21,8 +21,8 @@ from src.chat.schemas import (
     deserialize_conversation_state,
     serialize_conversation_state,
 )
-from src.guesthouses.vector_store import has_vector_store_documents as has_guesthouse_index
-from src.staff_steps.vector_store import has_vector_store_documents as has_staff_index
+from src.guesthouses.vector_store import is_vector_store_initialized as is_guesthouse_index_ready
+from src.staff_steps.vector_store import is_vector_store_initialized as is_staff_index_ready
 from src.service_guide.vector_store import has_vector_store_documents as has_service_guide_index
 from src.jeju_travel.vector_store import has_vector_store_documents as has_jeju_travel_index
 from src.guesthouses.data_loader import load_guesthouse_from_backend
@@ -105,8 +105,8 @@ class ChatResponseBody(BaseModel):
 
 @app.get("/health")
 def health() -> dict:
-    guesthouse_ready = has_guesthouse_index()
-    staff_ready = has_staff_index()
+    guesthouse_ready = is_guesthouse_index_ready()
+    staff_ready = is_staff_index_ready()
     service_guide_ready = has_service_guide_index()
     jeju_travel_ready = has_jeju_travel_index()
     return {

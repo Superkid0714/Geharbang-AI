@@ -67,6 +67,11 @@ def delete_guesthouse_document(
     _get_collection(persist_directory, reset=False).delete(ids=[f"guesthouse-{guesthouse_id}"])
 
 
+def clear_vector_store(persist_directory: str = DEFAULT_PERSIST_DIRECTORY) -> None:
+    """Remove stale guesthouse documents while keeping an initialized collection."""
+    _get_collection(persist_directory, reset=True)
+
+
 def synchronize_guesthouse_documents(
     documents: list[dict],
     persist_directory: str = DEFAULT_PERSIST_DIRECTORY,
@@ -152,6 +157,21 @@ def has_vector_store_documents(
         return False
 
     return collection.count() > 0
+
+
+def is_vector_store_initialized(
+    persist_directory: str = DEFAULT_PERSIST_DIRECTORY,
+) -> bool:
+    """Return True when synchronization created the collection, even if the DB is empty."""
+    if not Path(persist_directory).exists():
+        return False
+
+    try:
+        import chromadb
+        chromadb.PersistentClient(path=persist_directory).get_collection(COLLECTION_NAME)
+        return True
+    except Exception:
+        return False
 
 
 def _get_model() -> Any:

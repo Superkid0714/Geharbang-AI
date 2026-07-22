@@ -4,6 +4,21 @@ import src.api.main as api
 from src.chat.schemas import ChatDomain, ChatResponse
 
 
+def test_ready_accepts_initialized_empty_dynamic_indexes(monkeypatch) -> None:
+    monkeypatch.setattr(api, "is_guesthouse_index_ready", lambda: True)
+    monkeypatch.setattr(api, "is_staff_index_ready", lambda: True)
+    monkeypatch.setattr(api, "has_service_guide_index", lambda: True)
+    monkeypatch.setattr(api, "has_jeju_travel_index", lambda: True)
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+
+    response = TestClient(api.app).get("/ready")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+    assert response.json()["indexes"]["guesthouse"] is True
+    assert response.json()["indexes"]["staffStep"] is True
+
+
 def test_image_chat_accepts_multipart_and_returns_session(monkeypatch) -> None:
     monkeypatch.setattr(
         api,
