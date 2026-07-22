@@ -30,6 +30,8 @@ def build_vector_store(
                 "region": item["region"],
                 "workingPeriod": item["workingPeriod"],
                 "gender": item["gender"],
+                "averageRating": item["averageRating"],
+                "reviewCount": item["reviewCount"],
             }
             for item in documents
         ],
@@ -57,6 +59,8 @@ def upsert_staff_recruitment_document(
             "region": document["region"],
             "workingPeriod": document["workingPeriod"],
             "gender": document["gender"],
+            "averageRating": document["averageRating"],
+            "reviewCount": document["reviewCount"],
         }],
     )
 

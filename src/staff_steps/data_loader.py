@@ -83,10 +83,21 @@ def validate_staff_recruitments_payload(payload: Any) -> list[dict]:
             raise ValueError(f"{label}.id must be an integer")
         if not isinstance(details, dict):
             raise ValueError(f"{label}.details must be an object")
+        average_rating = item.get("averageRating", 0.0)
+        review_count = item.get("reviewCount", 0)
+        if not isinstance(average_rating, (int, float)) or isinstance(average_rating, bool):
+            raise ValueError(f"{label}.averageRating must be a number")
+        if not isinstance(review_count, int) or isinstance(review_count, bool) or review_count < 0:
+            raise ValueError(f"{label}.reviewCount must be a non-negative integer")
         for field in ("title", "guestHouseName", "region"):
             value = details.get(field)
             if not isinstance(value, str) or not value.strip():
                 raise ValueError(f"{label}.details.{field} must not be empty")
-        validated.append({"id": recruitment_id, "details": details})
+        validated.append({
+            "id": recruitment_id,
+            "details": details,
+            "averageRating": float(average_rating),
+            "reviewCount": review_count,
+        })
 
     return validated

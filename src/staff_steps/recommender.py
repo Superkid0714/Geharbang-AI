@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from src.chat.persona import GEHARBANG_TONE_RULES
 from src.guesthouses.recommender import _generate_gemini_answer
 from src.staff_steps.data_loader import load_staff_recruitment, load_staff_recruitments
 from src.staff_steps.document_builder import build_staff_recruitment_document, build_staff_recruitment_documents
@@ -29,13 +30,13 @@ def answer_staff_chat(query: str, previous_result: dict | None = None) -> tuple[
             conditions=None,
             candidate_ids=candidate_ids,
         )
+        current_documents = {
+            int(document["staffRecruitmentId"]): document
+            for document in build_staff_recruitment_documents(filtered_items)
+        }
         if not results:
             result = build_staff_recruitment_document(filtered_items[0])
         else:
-            current_documents = {
-                int(document["staffRecruitmentId"]): document
-                for document in build_staff_recruitment_documents(filtered_items)
-            }
             result = build_staff_recruitment_document(filtered_items[0])
             for indexed_result in results:
                 recruitment_id = indexed_result.get("staffRecruitmentId")
@@ -46,7 +47,20 @@ def answer_staff_chat(query: str, previous_result: dict | None = None) -> tuple[
                     }
                     break
 
+        if any(keyword in query.replace(" ", "") for keyword in ["평점", "리뷰좋은", "후기좋은", "리뷰많은", "후기많은"]):
+            result = _select_by_reviews(query, list(current_documents.values()))
+
     return _generate_gemini_answer(_build_prompt(query, result)), result
+
+
+def _select_by_reviews(query: str, documents: list[dict]) -> dict:
+    normalized = query.replace(" ", "")
+    reviewed = [document for document in documents if document.get("reviewCount", 0) > 0]
+    if not reviewed:
+        return documents[0]
+    if "리뷰많은" in normalized or "후기많은" in normalized:
+        return max(reviewed, key=lambda item: (item.get("reviewCount", 0), item.get("averageRating", 0.0)))
+    return max(reviewed, key=lambda item: (item.get("averageRating", 0.0), item.get("reviewCount", 0)))
 
 
 def _load_fresh_staff_result(previous_result: dict) -> dict:
@@ -66,8 +80,8 @@ def _no_result_message(conditions: dict[str, str]) -> str:
         labels.append(f"성별 {conditions['gender']}")
     condition_text = " ".join(labels)
     if condition_text:
-        return f"현재 {condition_text} 조건에 맞는 활성 스텝 공고를 찾지 못했습니다. 조건을 조금 넓혀 다시 질문해 주세요."
-    return "현재 확인할 수 있는 활성 스텝 공고가 없습니다."
+        return f"지금은 {condition_text} 조건에 딱 맞는 스텝 공고가 없어요. 가장 중요한 조건을 남기고 범위를 조금 넓혀 같이 찾아볼까요?"
+    return "지금 확인할 수 있는 스텝 공고가 없어요. 새 공고가 올라온 뒤 다시 같이 살펴봐요."
 
 
 def _build_prompt(query: str, result: dict) -> str:
@@ -81,8 +95,10 @@ def _build_prompt(query: str, result: dict) -> str:
 4. 사용자의 조건과 명확히 맞지 않으면 억지로 추천하지 않습니다.
 5. 공고 내용은 변경될 수 있으므로 실제 지원 전에 상세 화면에서 다시 확인하도록 안내합니다.
 6. 내부 벡터 점수, 임베딩, 검색 시스템은 언급하지 않습니다.
-7. Markdown 기호 없이 간결하게 답합니다.
+7. 질문받은 조건만 우선 답하고 기본 답변은 2~3문장, 약 250자 안팎으로 끝냅니다. 넓은 질문이어도 핵심 조건 두 개만 말하고 세부 정보를 나열하지 않습니다.
 8. 새로운 공고 추천 질문에는 공고 제목과 게스트하우스 이름을 함께 말합니다.
+
+{GEHARBANG_TONE_RULES}
 
 사용자 질문:
 {query}

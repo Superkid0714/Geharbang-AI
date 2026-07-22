@@ -39,6 +39,11 @@ def build_staff_recruitment_document(item: dict) -> dict:
     _append_list(parts, "제공 혜택과 복지", feature.get("employeeBenefits"))
     _append(parts, "사장님 메시지", details.get("ownerMessage"))
 
+    review_count = item.get("reviewCount", 0)
+    average_rating = item.get("averageRating", 0.0)
+    if isinstance(review_count, int) and review_count > 0 and isinstance(average_rating, (int, float)):
+        parts.append(f"스텝 후기는 {review_count}개이고 평균 평점은 5점 만점에 {average_rating}점입니다.")
+
     return {
         "staffRecruitmentId": recruitment_id,
         "title": title,
@@ -46,6 +51,8 @@ def build_staff_recruitment_document(item: dict) -> dict:
         "region": details["region"],
         "workingPeriod": working.get("workingPeriod") or "",
         "gender": feature.get("gender") or "무관",
+        "averageRating": float(average_rating),
+        "reviewCount": review_count,
         "content": "\n".join(part for part in parts if part),
     }
 

@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from src.staff_steps.data_loader import validate_staff_recruitments_payload
 from src.staff_steps.document_builder import build_staff_recruitment_document
-from src.staff_steps.recommender import answer_staff_chat
+from src.staff_steps.recommender import _select_by_reviews, answer_staff_chat
 from src.staff_steps.structured_filter import extract_staff_conditions, filter_staff_recruitments
 
 
@@ -11,6 +11,8 @@ SAMPLE = {
     "staffRecruitments": [
         {
             "id": 12,
+            "averageRating": 4.8,
+            "reviewCount": 7,
             "details": {
                 "title": "애월 한 달 스텝 모집",
                 "guestHouseName": "테스트 게하",
@@ -43,7 +45,10 @@ class StaffStepDataTest(unittest.TestCase):
         self.assertIn("애월 한 달 스텝 모집", document["content"])
         self.assertIn("침구 정리", document["content"])
         self.assertIn("숙소 제공", document["content"])
+        self.assertIn("스텝 후기는 7개", document["content"])
         self.assertEqual(document["workingPeriod"], "한달")
+        self.assertEqual(document["averageRating"], 4.8)
+        self.assertEqual(document["reviewCount"], 7)
 
     def test_rejects_missing_id(self) -> None:
         with self.assertRaisesRegex(ValueError, "id must be an integer"):
@@ -66,6 +71,21 @@ class StaffStepDataTest(unittest.TestCase):
             items,
         )
         self.assertEqual(filter_staff_recruitments(items, {"region": "제주시"}), [])
+
+    def test_selects_staff_recruitment_by_review_request(self) -> None:
+        documents = [
+            {"staffRecruitmentId": 1, "averageRating": 4.9, "reviewCount": 2},
+            {"staffRecruitmentId": 2, "averageRating": 4.7, "reviewCount": 15},
+        ]
+
+        self.assertEqual(
+            _select_by_reviews("후기 좋은 스텝 공고", documents)["staffRecruitmentId"],
+            1,
+        )
+        self.assertEqual(
+            _select_by_reviews("리뷰 많은 스텝 공고", documents)["staffRecruitmentId"],
+            2,
+        )
 
     @patch("src.staff_steps.recommender._generate_gemini_answer", side_effect=lambda prompt: prompt)
     @patch("src.staff_steps.recommender.search_staff_recruitments")
