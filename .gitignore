@@ -3,3 +3,7 @@
 __pycache__/
 *.pyc
 storage/vector_db/
+
+# 제주 여행 RAG 원본 자료는 로컬/서버에서만 관리한다.
+/data/jeju_travel/*.pdf
+/data/jeju_travel/**/*.pdf

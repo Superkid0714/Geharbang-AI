@@ -2,6 +2,7 @@ from src.chat.orchestrator import answer_chat
 from src.chat.schemas import ConversationState
 from src.guesthouses.vector_store import has_vector_store_documents
 from src.staff_steps.vector_store import has_vector_store_documents as has_staff_vector_store_documents
+from src.jeju_travel.vector_store import has_vector_store_documents as has_jeju_travel_vector_store_documents
 
 
 MISSING_VECTOR_DB_MESSAGE = "벡터 DB가 구축되어 있지 않습니다. python rebuild_index.py를 먼저 실행해 주세요."
@@ -39,7 +40,11 @@ def main() -> None:
 
 def _is_any_vector_store_ready() -> bool:
     try:
-        return has_vector_store_documents() or has_staff_vector_store_documents()
+        return (
+            has_vector_store_documents()
+            or has_staff_vector_store_documents()
+            or has_jeju_travel_vector_store_documents()
+        )
     except ImportError:
         return False
 

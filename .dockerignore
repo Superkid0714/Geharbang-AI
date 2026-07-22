@@ -9,3 +9,5 @@ __pycache__
 .pytest_cache
 .DS_Store
 storage/vector_db
+data/jeju_travel/*.pdf
+data/jeju_travel/**/*.pdf

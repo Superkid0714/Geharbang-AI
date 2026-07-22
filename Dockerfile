@@ -8,7 +8,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install --no-install-recommends -y libgomp1 \
+    && apt-get install --no-install-recommends -y \
+        libgomp1 \
+        tesseract-ocr \
+        tesseract-ocr-eng \
+        tesseract-ocr-kor \
     && rm -rf /var/lib/apt/lists/* \
     && adduser --disabled-password --gecos "" appuser
 

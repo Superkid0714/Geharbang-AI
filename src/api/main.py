@@ -24,6 +24,7 @@ from src.chat.schemas import (
 from src.guesthouses.vector_store import has_vector_store_documents as has_guesthouse_index
 from src.staff_steps.vector_store import has_vector_store_documents as has_staff_index
 from src.service_guide.vector_store import has_vector_store_documents as has_service_guide_index
+from src.jeju_travel.vector_store import has_vector_store_documents as has_jeju_travel_index
 from src.guesthouses.data_loader import load_guesthouse_from_backend
 from src.guesthouses.document_builder import build_guesthouse_document
 from src.guesthouses.vector_store import delete_guesthouse_document, upsert_guesthouse_document
@@ -107,12 +108,18 @@ def health() -> dict:
     guesthouse_ready = has_guesthouse_index()
     staff_ready = has_staff_index()
     service_guide_ready = has_service_guide_index()
+    jeju_travel_ready = has_jeju_travel_index()
     return {
-        "status": "ok" if guesthouse_ready and staff_ready and service_guide_ready else "degraded",
+        "status": (
+            "ok"
+            if guesthouse_ready and staff_ready and service_guide_ready and jeju_travel_ready
+            else "degraded"
+        ),
         "indexes": {
             "guesthouse": guesthouse_ready,
             "staffStep": staff_ready,
             "serviceGuide": service_guide_ready,
+            "jejuTravel": jeju_travel_ready,
         },
         "geminiConfigured": bool(os.getenv("GEMINI_API_KEY")),
         "reconciliation": dict(_reconciliation_status),

@@ -12,6 +12,8 @@ from src.staff_steps.vector_store import (
 from src.service_guide.data_loader import load_service_guides
 from src.service_guide.document_builder import build_service_guide_documents
 from src.service_guide.vector_store import build_vector_store as build_service_guide_vector_store
+from src.jeju_travel.data_loader import load_jeju_travel_documents
+from src.jeju_travel.vector_store import build_vector_store as build_jeju_travel_vector_store
 
 
 def main() -> None:
@@ -24,7 +26,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="게하르방 RAG 인덱스 재구축")
     parser.add_argument(
         "--domain",
-        choices=["all", "guesthouses", "staff-steps", "service-guide"],
+        choices=["all", "guesthouses", "staff-steps", "service-guide", "jeju-travel"],
         default="all",
     )
     args = parser.parse_args()
@@ -35,6 +37,8 @@ def main() -> None:
         rebuild_staff_step_index()
     if args.domain in {"all", "service-guide"}:
         rebuild_service_guide_index()
+    if args.domain in {"all", "jeju-travel"}:
+        rebuild_jeju_travel_index()
 
 
 def rebuild_guesthouse_index() -> None:
@@ -73,6 +77,15 @@ def rebuild_service_guide_index() -> None:
     print(f"서비스 안내 문서 개수: {len(documents)}")
     build_service_guide_vector_store(documents, reset=True)
     print("서비스 안내 벡터 DB 재구축이 완료되었습니다.")
+
+
+def rebuild_jeju_travel_index() -> None:
+    print("제주 여행 PDF 텍스트 추출 및 문서 분할 중...")
+    documents = load_jeju_travel_documents()
+    print(f"제주 여행 검색 청크 개수: {len(documents)}")
+    print("제주 여행 Chroma 컬렉션 초기화 및 Dense 임베딩 저장 중...")
+    build_jeju_travel_vector_store(documents, reset=True)
+    print("제주 여행 벡터 DB 재구축이 완료되었습니다.")
 
 
 if __name__ == "__main__":

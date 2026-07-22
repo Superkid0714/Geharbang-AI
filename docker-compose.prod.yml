@@ -19,6 +19,7 @@ services:
     volumes:
       - rag-vector-db:/app/storage/vector_db
       - rag-huggingface-cache:/home/appuser/.cache/huggingface
+      - ${JEJU_TRAVEL_PDF_DIRECTORY:-./data/jeju_travel}:/app/data/jeju_travel:ro
     networks:
       - guesthouse
     healthcheck:
